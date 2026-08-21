@@ -1,0 +1,7 @@
+/home/jonkadelic/Projects/shogo-hook/hook_dll/lib/minhook-1.3.4/build_dir/CMakeFiles/minhook.dir
+/home/jonkadelic/Projects/shogo-hook/hook_dll/lib/minhook-1.3.4/build_dir/CMakeFiles/edit_cache.dir
+/home/jonkadelic/Projects/shogo-hook/hook_dll/lib/minhook-1.3.4/build_dir/CMakeFiles/rebuild_cache.dir
+/home/jonkadelic/Projects/shogo-hook/hook_dll/lib/minhook-1.3.4/build_dir/CMakeFiles/list_install_components.dir
+/home/jonkadelic/Projects/shogo-hook/hook_dll/lib/minhook-1.3.4/build_dir/CMakeFiles/install.dir
+/home/jonkadelic/Projects/shogo-hook/hook_dll/lib/minhook-1.3.4/build_dir/CMakeFiles/install/local.dir
+/home/jonkadelic/Projects/shogo-hook/hook_dll/lib/minhook-1.3.4/build_dir/CMakeFiles/install/strip.dir
