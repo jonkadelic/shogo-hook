@@ -166,7 +166,7 @@ static WPARAM __cdecl hook_RunClientApp(HINSTANCE hInstance, CommandLineArgs* pA
     pGlob->m_bBreakOnError = p_FindArgDash("breakonerror", pArgs->argc, pArgs->argv) != NULL;
 
     // Create the main window;
-    wndclass.style = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;
+    wndclass.style = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS | CS_OWNDC; //temp
     wndclass.lpfnWndProc = p_MainWndProc;
     wndclass.cbClsExtra = 0;
     wndclass.cbWndExtra = 0;

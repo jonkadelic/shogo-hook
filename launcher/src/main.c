@@ -43,28 +43,44 @@ bool inject_dll(HANDLE hProcess, const char* dll_path) {
 }
 
 int main(int argc, char** argv) {
-    char const* const shogo_exe_path = "C:\\Games\\Shogo\\Client.exe";
-    char const* const dll_path = "C:\\jonkwin\\shogo_hook.dll";
+    char const* client_exe_path = "C:\\Games\\Shogo\\Client.exe";
+    char const* dll_path = "C:\\jonkwin\\shogo_hook.dll";
+    char const* workingdir = "C:\\Games\\Shogo";
+
+    for (int i = 1; i < argc; i++) {
+        if (strncmp(argv[i], "shogo_exe_path=", 15) == 0) {
+            client_exe_path = &argv[i][15];
+        }
+        if (strncmp(argv[i], "dll_path=", 9) == 0) {
+            dll_path = &argv[i][9];
+        }
+        if (strncmp(argv[i], "workingdir=", 11) == 0) {
+            workingdir = &argv[i][11];
+        }
+    }
+
+    printf("client_exe_path = %s\ndll_path = %s\nworkingdir = %s\n", client_exe_path, dll_path, workingdir);
 
     char cmdline[4096];
     sprintf_s(
         cmdline,
         sizeof(cmdline),
         "\"%s\" "
-        "-workingdir C:\\Games\\Shogo "
+        "-workingdir %s "
         "-rez shogo.rez "
         "-rez shogop.rez "
         "-rez shogop2.rez "
         "-rez shogop3.rez "
         "-rez shogop4.rez "
         "-rez sound.rez ",
-        shogo_exe_path
+        client_exe_path,
+        workingdir
     );
 
     STARTUPINFOA si = { sizeof(si) };
     PROCESS_INFORMATION pi = { 0 };
 
-    if (!CreateProcessA(shogo_exe_path, cmdline, nullptr, nullptr, FALSE, CREATE_SUSPENDED, nullptr, "C:\\Games\\Shogo", &si, &pi)) {
+    if (!CreateProcessA(client_exe_path, cmdline, nullptr, nullptr, FALSE, CREATE_SUSPENDED, nullptr, "C:\\Games\\Shogo", &si, &pi)) {
         printf("CreateProcess failed: %lu\n", GetLastError());
         return 1;
     }

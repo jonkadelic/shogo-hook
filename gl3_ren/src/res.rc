@@ -1,0 +1,4 @@
+STRINGTABLE
+BEGIN
+    5, "OpenGL 3.3 Renderer"
+END

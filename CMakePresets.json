@@ -1,0 +1,33 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 20,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "mingw-x86",
+      "displayName": "MinGW x86",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_SYSTEM_NAME": "Windows",
+        "CMAKE_C_COMPILER": "i686-w64-mingw32-gcc",
+        "CMAKE_CXX_COMPILER": "i686-w64-mingw32-g++",
+        "CMAKE_RC_COMPILER": "i686-w64-mingw32-windres",
+        "CMAKE_FIND_ROOT_PATH_MODE_PROGRAM": "NEVER",
+        "CMAKE_FIND_ROOT_PATH_MODE_LIBRARY": "ONLY",
+        "CMAKE_FIND_ROOT_PATH_MODE_INCLUDE": "ONLY",
+        "CMAKE_FIND_ROOT_PATH_MODE_PACKAGE": "ONLY",
+        "CMAKE_BUILD_TYPE": "DEBUG"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "mingw-x86",
+      "configurePreset": "mingw-x86"
+    }
+  ]
+}
