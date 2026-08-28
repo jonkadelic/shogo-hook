@@ -1,0 +1,4 @@
+STRINGTABLE
+BEGIN
+    5, "SDL3_GPU Renderer"
+END

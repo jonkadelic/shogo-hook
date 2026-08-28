@@ -1,23 +1,6 @@
 #pragma once
 
-#include <stdint.h>
-
-#include <SDL3/SDL.h>
-
 #include <lithtech/lithtech.h>
-
-#include "surfaces.h"
-
-typedef struct renderer {
-    bool init_run;
-    SDL_Window* window;
-    SDL_GLContext gl_context;
-    bool in_3d;
-    bool in_2d;
-    surface_manager_t surfaces;
-} renderer_t;
-
-renderer_t* renderer__get(void);
 
 uint32_t __cdecl r_Init(RenderStructInit_t* pInit);
 void __cdecl r_Term(void);

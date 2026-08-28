@@ -5,19 +5,22 @@
 #include <SDL3/SDL.h>
 #include <lithtech/lithtech.h>
 
-#include "debug.h"
-#include "renderer.h"
+#include "util/debug.h"
+#include "render/render_api.h"
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID) {
     switch (reason) {
         case DLL_PROCESS_ATTACH: {
             DisableThreadLibraryCalls(hModule);
-            if (!SDL_Init(SDL_INIT_VIDEO)) {
-                return FALSE;
-            }
-        } break;
-        case DLL_PROCESS_DETACH: {
-            SDL_Quit();
+
+            #ifdef DEBUG
+                if (!AttachConsole(ATTACH_PARENT_PROCESS)) {
+                    AllocConsole();
+                }
+
+                freopen_s((FILE**)stdout, "CONOUT$", "w", stdout);
+                setvbuf(stdout, nullptr, _IONBF, 0);
+            #endif
         } break;
     }
 
@@ -74,6 +77,10 @@ RMode_t* GetSupportedModes(void) {
     size_t largest_display_size = 0;
     SDL_DisplayID largest_display;
 
+    if (!SDL_Init(SDL_INIT_VIDEO)) {
+        return nullptr;
+    }
+
     displays = SDL_GetDisplays(&num_displays);
     if (displays == nullptr) {
         goto err;
@@ -95,7 +102,7 @@ RMode_t* GetSupportedModes(void) {
             memset(rmode, 0, sizeof(RMode_t));
 
             rmode->m_bHardware = 1;
-            snprintf(rmode->m_RenderDLL, sizeof(rmode->m_RenderDLL), "gl3.ren");
+            snprintf(rmode->m_RenderDLL, sizeof(rmode->m_RenderDLL), "sdlgpu.ren");
             snprintf(rmode->m_InternalName, sizeof(rmode->m_InternalName), "sdl:%u", displays[i]);
             snprintf(rmode->m_Description, sizeof(rmode->m_Description), "%s", SDL_GetDisplayName(displays[i]));
             rmode->m_Width = mode->w;
@@ -134,7 +141,7 @@ RMode_t* GetSupportedModes(void) {
 
         RMode_t* rmode = &rmodes[num_rmodes - 1];
         memset(rmode, 0, sizeof(RMode_t));
-        snprintf(rmode->m_RenderDLL, sizeof(rmode->m_RenderDLL), "gl3.ren");
+        snprintf(rmode->m_RenderDLL, sizeof(rmode->m_RenderDLL), "sdlgpu.ren");
         snprintf(rmode->m_InternalName, sizeof(rmode->m_InternalName), "windowed");
         snprintf(rmode->m_Description, sizeof(rmode->m_Description), "Windowed");
         rmode->m_Width = mode->w;
@@ -150,12 +157,15 @@ RMode_t* GetSupportedModes(void) {
 
     SDL_free(displays);
 
+    SDL_Quit();
+
     return rmodes;
 
 err:
     free(rmodes);
     SDL_free(displays);
     SDL_free(display_modes);
+    SDL_Quit();
     return nullptr;
 }
 

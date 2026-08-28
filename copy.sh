@@ -14,4 +14,5 @@ do
   fi
 done
 
-cp -f "${ROOT_DIR}/build/gl3_ren/gl3.ren" "${TARGET_DIR}/Shogo"
+cp -f "${ROOT_DIR}/build/sdlgpu_ren/sdlgpu.ren" "${TARGET_DIR}/Shogo"
+cp -f "${ROOT_DIR}/build/glx_ren/glx.ren" "${TARGET_DIR}/Shogo"

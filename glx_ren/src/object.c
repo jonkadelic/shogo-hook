@@ -86,4 +86,3 @@ static void draw_container(DObject_t* object) {
     printf("Drawing container object %hu\n", object->m_ObjectID);
 
 }
-

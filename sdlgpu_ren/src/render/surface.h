@@ -2,13 +2,11 @@
 
 #include <stdint.h>
 
-#include <glad/glad.h>
-
 typedef struct surface {
     size_t idx;
     int32_t width, height;
     bool locked;
-    GLuint glTexture;
+    uint32_t glTexture;
     uint16_t glWidth, glHeight;
     uint8_t data[];
 } surface_t;

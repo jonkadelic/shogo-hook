@@ -14,34 +14,34 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(SDL3)
 
-add_library(gl3_ren SHARED
-    src/main.c
+add_library(glx_ren SHARED
     src/blit.c
+    src/main.c
+    src/object.c
     src/renderer.c
     src/res.rc
     src/surfaces.c
-    src/object.c
 )
 
 add_subdirectory(lib/glad)
 
-target_include_directories(gl3_ren PRIVATE
+target_include_directories(glx_ren PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
-target_link_libraries(gl3_ren PRIVATE SDL3::SDL3-static glad lt_common)
-target_link_options(gl3_ren PRIVATE -static-libgcc)
+target_link_libraries(glx_ren PRIVATE SDL3::SDL3-static glx_glad lt_common)
+target_link_options(glx_ren PRIVATE -static-libgcc)
 
 # Output file is literally "gl3.ren" (no .dll extension), still a PE DLL.
-set_target_properties(gl3_ren PROPERTIES
+set_target_properties(glx_ren PROPERTIES
     PREFIX ""
-    OUTPUT_NAME "gl3"
+    OUTPUT_NAME "glx"
     SUFFIX ".ren"
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/gl3_ren"
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/gl3_ren"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/glx_ren"
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/glx_ren"
 )
 
-add_custom_command(TARGET gl3_ren POST_BUILD
+add_custom_command(TARGET glx_ren POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E chdir ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/copy.sh
-    COMMENT "Copying gl3.ren to target directory"
+    COMMENT "Copying glx.ren to target directory"
 )

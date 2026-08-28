@@ -16,7 +16,7 @@ typedef struct RMode {
     uint32_t m_Width, m_Height, m_BitDepth;
     struct RMode* m_pNext;
 } RMode_t;
-static_assert(sizeof(RMode_t) == 0x01A4);
+static_assert(sizeof(RMode_t) == 0x01A4); // defined in glx.ren::GetSupportedModes()
 static_assert(offsetof(RMode_t, m_bHardware) == 0x0000);
 static_assert(offsetof(RMode_t, m_RenderDLL) == 0x0001);
 static_assert(offsetof(RMode_t, m_InternalName) == 0x00c9);

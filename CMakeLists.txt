@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.22)
 
 project(shogo_hook LANGUAGES C)
 
@@ -8,5 +8,6 @@ set(CMAKE_C_EXTENSIONS ON)
 
 add_subdirectory(hook_dll)
 add_subdirectory(launcher)
-add_subdirectory(gl3_ren)
+add_subdirectory(sdlgpu_ren)
+add_subdirectory(glx_ren)
 add_subdirectory(lt_common)

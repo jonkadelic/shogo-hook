@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <SDL3/SDL_stdinc.h>
+
 #include "surfaces.h"
 #include "debug.h"
 
@@ -93,7 +95,7 @@ static void update_surface_texture(surface_t* surface, bool transparency, uint16
         
     }
 
-    uint32_t* buffer = malloc(surface->glWidth * surface->glHeight * 4);
+    uint32_t* buffer = SDL_malloc(surface->glWidth * surface->glHeight * 4);
     uint16_t* data = (uint16_t*) surface->data;
 
     if (buffer != nullptr && surface->height > 0) {
@@ -128,7 +130,7 @@ static void update_surface_texture(surface_t* surface, bool transparency, uint16
 
 static void export_ppm(surface_t* surface, void* buffer) {
     char path[MAX_PATH];
-    snprintf(path, sizeof(path), "surface%u.ppm", surface->glTexture);
+    SDL_snprintf(path, sizeof(path), "surface%u.ppm", surface->glTexture);
 
     FILE* file = fopen(path, "wb");
     if (file == nullptr) {
