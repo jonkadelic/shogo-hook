@@ -10,11 +10,11 @@ typedef struct surface {
     bool locked;
     GLuint glTexture;
     uint16_t glWidth, glHeight;
-    uint8_t data[];
+    uint8_t extern_data[];
 } surface_t;
 
 typedef struct surface_manager {
-    size_t surfaces_len;
+    size_t surfaces_capacity;
     surface_t** surfaces;
 } surface_manager_t;
 

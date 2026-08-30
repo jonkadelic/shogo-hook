@@ -3,6 +3,10 @@
 #include "./common.h"
 #include "./shapes.h"
 
+typedef enum BlitRequestOptions {
+    BlitRequestOptions_Transparent = 0x0000'0001,
+} BlitRequestOptions_t;
+
 typedef struct [[gnu::packed]] BlitRequest {
     void* m_pSurface;
     uint32_t m_BlitOptions;

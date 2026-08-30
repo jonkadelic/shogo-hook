@@ -1,3 +1,7 @@
+cmake_minimum_required(VERSION 3.20)
+
+project(glx_ren LANGUAGES C)
+
 include(FetchContent)
 
 # SDL3 builds its own tests/examples by default; disable to keep this fast.
@@ -32,16 +36,11 @@ target_include_directories(glx_ren PRIVATE
 target_link_libraries(glx_ren PRIVATE SDL3::SDL3-static glx_glad lt_common)
 target_link_options(glx_ren PRIVATE -static-libgcc)
 
-# Output file is literally "gl3.ren" (no .dll extension), still a PE DLL.
+# Output file is literally "glx.ren" (no .dll extension), still a PE DLL.
 set_target_properties(glx_ren PROPERTIES
     PREFIX ""
     OUTPUT_NAME "glx"
     SUFFIX ".ren"
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/glx_ren"
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/glx_ren"
-)
-
-add_custom_command(TARGET glx_ren POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E chdir ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/copy.sh
-    COMMENT "Copying glx.ren to target directory"
 )

@@ -75,6 +75,7 @@ static void draw_polygrid(DObject_t* object) {
 
     PolyGrid_t* polygrid = (PolyGrid_t*) object;
     printf("Polygrid is %ux%u\n", polygrid->m_Width, polygrid->m_Height);
+
 }
 
 static void draw_linesystem(DObject_t* object) {

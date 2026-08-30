@@ -32,6 +32,10 @@ bool renderer__init(renderer_t* self, void* hwnd, RMode_t const* mode) {
         goto err;
     }
 
+#ifdef DEBUG
+    SDL_SetHint(SDL_HINT_LOGGING, "*=verbose");
+#endif
+
     // Init window properties
     props = SDL_CreateProperties();
     if (props == 0) {
@@ -79,14 +83,20 @@ bool renderer__init(renderer_t* self, void* hwnd, RMode_t const* mode) {
         goto err;
     }
 
+    // Init texture manager
+    if (!texture_manager__init(&self->textures, self->device)) {
+        error__display_fatal(SDL_LOG_CATEGORY_APPLICATION, "Failed to init texture manager");
+        goto err;
+    }
+
     // Init surface manager
-    if (!surface_manager__init(&self->surfaces)) {
+    if (!surface_manager__init(&self->surfaces, &self->textures)) {
         error__display_fatal(SDL_LOG_CATEGORY_APPLICATION, "Failed to init surface manager");
         goto err;
     }
 
     // Init blitter
-    if (!blitter__init(&self->blitter, self->device, &self->tessellator)) {
+    if (!blitter__init(&self->blitter, self->device, &self->surfaces, &self->tessellator)) {
         error__display_fatal(SDL_LOG_CATEGORY_APPLICATION, "Failed to init blitter");
         goto err;
     }
@@ -129,7 +139,10 @@ void renderer__cleanup(renderer_t* self) {
         shader__cleanup(&self->shaders[i]);
     }
 
+    blitter__cleanup(&self->blitter);
     surface_manager__cleanup(&self->surfaces);
+    texture_manager__cleanup(&self->textures);
+    tessellator__cleanup(&self->tessellator);
 
     // Clean up SDL
     SDL_DestroyGPUDevice(self->device);
@@ -164,8 +177,8 @@ void renderer__start_draw(renderer_t* self) {
         goto err;
     }
 
-    // Flush tessellator
-    if (tessellator__needs_flush(&self->tessellator)) {
+    // Flush
+    if (tessellator__needs_flush(&self->tessellator) || texture_manager__needs_flush(&self->textures)) {
         SDL_GPUCopyPass* copy_pass = SDL_BeginGPUCopyPass(cmd_buffer);
         if (copy_pass == nullptr) {
             SDL_LogError(SDL_LOG_CATEGORY_GPU, "Could not begin GPU copy pass: %s", SDL_GetError());
@@ -173,6 +186,7 @@ void renderer__start_draw(renderer_t* self) {
         }
 
         tessellator__flush_to_gpu(&self->tessellator, cmd_buffer, copy_pass);
+        texture_manager__flush_to_gpu(&self->textures, cmd_buffer, copy_pass);
 
         SDL_EndGPUCopyPass(copy_pass);
     }
@@ -254,7 +268,9 @@ void renderer__draw_scene(renderer_t* self, SceneDesc_t const* scene_desc) {
 }
 
 void renderer__blit_to_screen(renderer_t* self, BlitRequest_t const* request) {
-    blit__blit_to_screen(&self->blitter, request, self->render_pass);
+    SDL_assert(self->cmd_buffer != nullptr && self->render_pass != nullptr);
+
+    blit__blit_to_screen(&self->blitter, request, self->cmd_buffer, self->render_pass);
 }
 
 static bool init_window(SDL_Window* window, RMode_t const* rmode) {

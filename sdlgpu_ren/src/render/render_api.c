@@ -107,8 +107,6 @@ DBOOL __cdecl r_StartOptimized2D(void) {
         return true;
     }
 
-    renderer__start_draw(r);
-
     r->in_2d = true;
     return true;
 }
@@ -121,8 +119,6 @@ DBOOL __cdecl r_EndOptimized2D(void) {
     if (!r->in_2d) {
         return false;
     }
-
-    renderer__end_draw(r);
 
     r->in_2d = false;
     return true;
@@ -155,10 +151,6 @@ void* __cdecl r_GetHook(char* pHook) {
 
 void __cdecl r_SwapBuffers(void) {
     DEBUG_PRINT_FUN();
-
-    auto renderer = renderer__get();
-
-    SDL_GL_SwapWindow(renderer->window);
 }
 
 uint32_t __cdecl r_GetInfoFlags(void) {
@@ -172,7 +164,7 @@ uint32_t __cdecl r_GetBufferFormat(void) {
 }
 
 void* __cdecl r_CreateSurface(int32_t width, int32_t height) {
-    DEBUG_PRINT_FUN();
+    // DEBUG_PRINT_FUN();
 
     auto renderer = renderer__get();
     auto surface = surface_manager__create_surface(&renderer->surfaces, width, height);
@@ -190,7 +182,7 @@ void __cdecl r_DeleteSurface(void* pSurface) {
 }
 
 void __cdecl r_GetSurfaceInfo(void* pSurface, int32_t* pWidth, int32_t* pHeight, int32_t* pPitchBytes) {
-    DEBUG_PRINT_FUN();
+    // DEBUG_PRINT_FUN();
 
     auto surface = (surface_t*) pSurface;
     
@@ -204,7 +196,7 @@ void* __cdecl r_LockSurface(void* pSurface) {
 
     surface->locked = true;
 
-    return surface->data;
+    return surface->extern_data;
 }
 
 void __cdecl r_UnlockSurface(void* pSurface) {

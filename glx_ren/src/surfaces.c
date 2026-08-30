@@ -11,7 +11,7 @@ bool surface_manager__init(surface_manager_t* self) {
 }
 
 void surface_manager__cleanup(surface_manager_t* self) {
-    for (size_t i = 0; i < self->surfaces_len; i++) {
+    for (size_t i = 0; i < self->surfaces_capacity; i++) {
         glDeleteTextures(1, &self->surfaces[i]->glTexture);
         free(self->surfaces[i]);
     }
@@ -26,7 +26,7 @@ surface_t* surface_manager__create_surface(surface_manager_t* self, int32_t widt
 
     surface_t** surface = nullptr;
     size_t surface_idx = 0;
-    for (size_t i = 0; i < self->surfaces_len; i++) {
+    for (size_t i = 0; i < self->surfaces_capacity; i++) {
         if (self->surfaces[i] == nullptr) {
             surface = &self->surfaces[i];
             surface_idx = i;
@@ -35,20 +35,20 @@ surface_t* surface_manager__create_surface(surface_manager_t* self, int32_t widt
     }
 
     if (surface == nullptr) {
-        size_t new_surfaces_len = self->surfaces_len == 0 ? 1 : self->surfaces_len * 2;
+        size_t new_surfaces_len = self->surfaces_capacity == 0 ? 1 : self->surfaces_capacity * 2;
         surface_t** new_surfaces = realloc(self->surfaces, sizeof(surface_t*) * new_surfaces_len);
         if (new_surfaces == nullptr) {
             return nullptr;
         }
 
-        for (size_t i = self->surfaces_len; i < new_surfaces_len; i++) {
+        for (size_t i = self->surfaces_capacity; i < new_surfaces_len; i++) {
             new_surfaces[i] = nullptr;
         }
 
-        surface = &new_surfaces[self->surfaces_len];
-        surface_idx = self->surfaces_len;
+        surface = &new_surfaces[self->surfaces_capacity];
+        surface_idx = self->surfaces_capacity;
 
-        self->surfaces_len = new_surfaces_len;
+        self->surfaces_capacity = new_surfaces_len;
         self->surfaces = new_surfaces;
     }
 
@@ -65,7 +65,7 @@ surface_t* surface_manager__create_surface(surface_manager_t* self, int32_t widt
 }
 
 void surface_manager__delete_surface(surface_manager_t* self, size_t idx) {
-    if (idx >= self->surfaces_len) {
+    if (idx >= self->surfaces_capacity) {
         return;
     }
 

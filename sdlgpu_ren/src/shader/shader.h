@@ -32,8 +32,8 @@ typedef struct shader_config {
 bool shader__init(
     shader_t* self,
     SDL_GPUDevice* device,
-    size_t vertex_src_len, void const* vertex_src,
-    size_t fragment_src_len, void const* fragment_src,
+    shader_init_data_t const* vertex_data,
+    shader_init_data_t const* fragment_data,
     size_t num_vertex_buffers, SDL_GPUVertexBufferDescription const* vertex_buffers,
     size_t num_vertex_attributes, SDL_GPUVertexAttribute const* vertex_attributes,
     size_t num_color_targets, SDL_GPUColorTargetDescription const* color_targets

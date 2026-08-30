@@ -1,5 +1,9 @@
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+
 #include "./blit_request.h"
 #include "./common.h"
 #include "./link.h"
@@ -9,3 +13,7 @@
 #include "./shapes.h"
 #include "./sprite.h"
 #include "./texture.h"
+
+#ifdef __cplusplus
+}
+#endif // __cplusplus

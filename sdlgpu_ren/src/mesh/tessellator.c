@@ -111,6 +111,11 @@ void tessellator__flush_to_gpu(tessellator_t* self, SDL_GPUCommandBuffer* cmd_bu
         return;
     }
 
+    // Ensure transfer buffer alignment
+    if (new_tx_buffer_size % 0x1000 != 0) {
+        new_tx_buffer_size = (new_tx_buffer_size - (new_tx_buffer_size % 0x1000)) + 0x1000;
+    }
+
     // Ensure mesh buffers are sufficient
     for (size_t i = 0; i < self->buffers_capacity; i++) {
         tessellator_buffer_t const* buffer = self->buffers[i];
@@ -129,7 +134,7 @@ void tessellator__flush_to_gpu(tessellator_t* self, SDL_GPUCommandBuffer* cmd_bu
                 mesh->vertices = SDL_CreateGPUBuffer(mesh->device, &buffer_info);
                 if (mesh->vertices == nullptr) {
                     SDL_LogError(SDL_LOG_CATEGORY_GPU, "Failed to create vertex buffer of %zu vertices: %s", buffer->vertices_len, SDL_GetError());
-                    return;
+                    goto end;
                 }
 
                 mesh->vertices_capacity = buffer->vertices_len;
@@ -146,7 +151,7 @@ void tessellator__flush_to_gpu(tessellator_t* self, SDL_GPUCommandBuffer* cmd_bu
                 mesh->indices = SDL_CreateGPUBuffer(mesh->device, &buffer_info);
                 if (mesh->indices == nullptr) {
                     SDL_LogError(SDL_LOG_CATEGORY_GPU, "Failed to create index buffer of %zu indices: %s", buffer->indices_len, SDL_GetError());
-                    return;
+                    goto end;
                 }
 
                 mesh->indices_capacity = buffer->indices_len;
@@ -156,11 +161,15 @@ void tessellator__flush_to_gpu(tessellator_t* self, SDL_GPUCommandBuffer* cmd_bu
 
     // Re-create transfer buffer if needed
     if (new_tx_buffer_size > self->tx_buffer_size) {
+        auto props = SDL_CreateProperties();
+        SDL_SetStringProperty(props, SDL_PROP_GPU_TRANSFERBUFFER_CREATE_NAME_STRING, "TessUploadTxBuffer");
         SDL_GPUTransferBufferCreateInfo info = {
             .usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD,
             .size = new_tx_buffer_size,
+            .props = props,
         };
         SDL_GPUTransferBuffer* new_tx_buffer = SDL_CreateGPUTransferBuffer(self->device, &info);
+        SDL_DestroyProperties(props);
         if (new_tx_buffer == nullptr) {
             SDL_LogError(SDL_LOG_CATEGORY_GPU, "Failed to create transfer buffer of %zu bytes: %s", new_tx_buffer_size, SDL_GetError());
             goto end;
@@ -199,7 +208,7 @@ void tessellator__flush_to_gpu(tessellator_t* self, SDL_GPUCommandBuffer* cmd_bu
             SDL_GPUTransferBufferLocation copy_src = {
                 .transfer_buffer = self->tx_buffer,
             };
-            SDL_GPUBufferRegion copy_dst;
+            SDL_GPUBufferRegion copy_dst = {0};
 
             // Copy vertex data to transfer buffer
             size_t vertices_size = sizeof(vertex_t) * buffer->vertices_len;

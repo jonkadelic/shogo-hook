@@ -1,14 +1,8 @@
-find_program(GLSL_COMPILER NAMES glslc glslangValidator REQUIRED)
-
-if(GLSL_COMPILER MATCHES "glslangValidator")
-    set(GLSL_FLAGS "-V")
-else()
-    set(GLSL_FLAGS "")
-endif()
+find_program(SLANG_COMPILER NAMES slangc REQUIRED)
+find_program(SPIRV_VAL NAMES spirv-val OPTIONAL)
 
 file(GLOB_RECURSE SHADER_FILES CONFIGURE_DEPENDS
-    "${CMAKE_CURRENT_SOURCE_DIR}/*.vert"
-    "${CMAKE_CURRENT_SOURCE_DIR}/*.frag"
+    "${CMAKE_CURRENT_SOURCE_DIR}/*.slang"
 )
 
 set(ALL_SPV_OUTPUTS "")
@@ -27,11 +21,19 @@ foreach(SHADER_FILE ${SHADER_FILES})
 
     add_custom_command(
         OUTPUT "${SPV_FILE}"
-        COMMAND ${GLSL_COMPILER} ${GLSL_FLAGS} "${SHADER_FILE}" -o "${SPV_FILE}"
+        COMMAND "${SLANG_COMPILER}" "${SHADER_FILE}" -entry vertex_main -stage vertex -entry fragment_main -stage fragment -target spirv -o "${SPV_FILE}"
         DEPENDS "${SHADER_FILE}"
-        COMMENT "Compiling GLSL shader ${REL_PATH} to SPIR-V"
+        COMMENT "Compiling Slang shader ${REL_PATH} to SPIR-V"
         VERBATIM
     )
+    if(${SPIRV_VAL})
+        add_custom_command(
+            COMMAND "${SPIRV_VAL}" "${SPV_FILE}"
+            DEPENDS "${SPV_FILE}"
+            COMMENT "Validating compiled SPIR-V shader"
+            VERBATIM
+        )
+    endif()
 
     list(APPEND ALL_SPV_OUTPUTS "${SPV_FILE}")
 

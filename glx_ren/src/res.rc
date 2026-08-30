@@ -1,4 +1,4 @@
 STRINGTABLE
 BEGIN
-    5, "OpenGL 3.3 Renderer"
+    5, "OpenGL 2.1 Renderer"
 END

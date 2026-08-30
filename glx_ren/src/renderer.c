@@ -300,7 +300,7 @@ void* __cdecl r_LockSurface(void* pSurface) {
 
     surface->locked = true;
 
-    return surface->data;
+    return surface->extern_data;
 }
 
 void __cdecl r_UnlockSurface(void* pSurface) {

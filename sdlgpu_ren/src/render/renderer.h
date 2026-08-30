@@ -8,8 +8,9 @@
 
 #include "mesh/tessellator.h"
 #include "render/blitter.h"
-#include "render/surface.h"
+#include "render/surfaces.h"
 #include "shader/shader.h"
+#include "texture/textures.h"
 
 typedef struct renderer {
     bool initialized;
@@ -21,6 +22,7 @@ typedef struct renderer {
     bool in_2d;
 
     tessellator_t tessellator;
+    texture_manager_t textures;
     surface_manager_t surfaces;
     blitter_t blitter;
 

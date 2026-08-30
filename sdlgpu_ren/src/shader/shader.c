@@ -19,8 +19,8 @@ static shader_pipeline_t* create_pipeline(shader_t* self, shader_config_t const*
 bool shader__init(
     shader_t* self,
     SDL_GPUDevice* device,
-    size_t vertex_src_len, void const* vertex_src,
-    size_t fragment_src_len, void const* fragment_src,
+    shader_init_data_t const* vertex_data,
+    shader_init_data_t const* fragment_data,
     size_t num_vertex_buffers, SDL_GPUVertexBufferDescription const* vertex_buffers,
     size_t num_vertex_attributes, SDL_GPUVertexAttribute const* vertex_attributes,
     size_t num_color_targets, SDL_GPUColorTargetDescription const* color_targets
@@ -31,11 +31,15 @@ bool shader__init(
 
     // Create vertex shader info
     SDL_GPUShaderCreateInfo vertex_shader_info = {
-        .code_size = vertex_src_len,
-        .code = vertex_src,
-        .entrypoint = "main",
+        .code_size = *vertex_data->src_len,
+        .code = vertex_data->src,
+        .entrypoint = vertex_data->entry_point != nullptr ? vertex_data->entry_point : "vertex_main",
         .format = SDL_GPU_SHADERFORMAT_SPIRV,
         .stage = SDL_GPU_SHADERSTAGE_VERTEX,
+        .num_samplers = vertex_data->num_samplers,
+        .num_storage_textures = vertex_data->num_storage_textures,
+        .num_storage_buffers = vertex_data->num_storage_buffers,
+        .num_uniform_buffers = vertex_data->num_uniform_buffers,
     };
 
     // Create vertex shader
@@ -47,11 +51,15 @@ bool shader__init(
 
     // Create fragment shader info
     SDL_GPUShaderCreateInfo fragment_shader_info = {
-        .code_size = fragment_src_len,
-        .code = fragment_src,
-        .entrypoint = "main",
+        .code_size = *fragment_data->src_len,
+        .code = fragment_data->src,
+        .entrypoint = fragment_data->entry_point != nullptr ? fragment_data->entry_point : "fragment_main",
         .format = SDL_GPU_SHADERFORMAT_SPIRV,
         .stage = SDL_GPU_SHADERSTAGE_FRAGMENT,
+        .num_samplers = fragment_data->num_samplers,
+        .num_storage_textures = fragment_data->num_storage_textures,
+        .num_storage_buffers = fragment_data->num_storage_buffers,
+        .num_uniform_buffers = fragment_data->num_uniform_buffers,
     };
 
     // Create fragment shader
@@ -104,10 +112,8 @@ bool shader__init_from_def(
     return shader__init(
         self,
         device,
-        *shader_def->vertex_src_len,
-        shader_def->vertex_src,
-        *shader_def->fragment_src_len,
-        shader_def->fragment_src,
+        &shader_def->vertex_data,
+        &shader_def->fragment_data,
         shader_def->num_vertex_buffers,
         shader_def->vertex_buffers,
         shader_def->num_vertex_attributes,
@@ -175,9 +181,9 @@ static shader_pipeline_t* create_pipeline(shader_t* self, shader_config_t const*
 
     // Ensure pipeline buffer is large enough
     size_t pipeline_index = self->pipelines_len;
-    if (self->pipelines_capacity == self->pipelines_len) {
+    if (self->pipelines_len + 1 > self->pipelines_capacity) {
         size_t new_pipelines_capacity = self->pipelines_capacity + PIPELINE_ALLOC_SIZE;
-        shader_pipeline_t* new_pipelines = SDL_realloc(self->pipelines, sizeof(shader_config_t) * new_pipelines_capacity);
+        shader_pipeline_t* new_pipelines = SDL_realloc(self->pipelines, sizeof(shader_pipeline_t) * new_pipelines_capacity);
         if (new_pipelines == nullptr) {
             SDL_LogError(SDL_LOG_CATEGORY_SYSTEM, "Failed to allocate %zu pipelines", new_pipelines_capacity);
             goto end;
@@ -232,12 +238,9 @@ static shader_pipeline_t* create_pipeline(shader_t* self, shader_config_t const*
     };
 
     // Create pipeline
-    SDL_GPUGraphicsPipeline* pipeline = SDL_CreateGPUGraphicsPipeline(
-        self->device,
-        &info
-    );
+    SDL_GPUGraphicsPipeline* pipeline = SDL_CreateGPUGraphicsPipeline(self->device, &info);
     if (pipeline == nullptr) {
-        SDL_LogError(SDL_LOG_CATEGORY_SYSTEM, "Failed to create GPU pipeline: %s", SDL_GetError());
+        SDL_LogError(SDL_LOG_CATEGORY_GPU, "Failed to create GPU pipeline: %s", SDL_GetError());
         goto end;
     }
 

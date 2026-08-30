@@ -21,8 +21,3 @@ set_target_properties(shogo_hook PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/hook_dll"
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/hook_dll"
 )
-
-add_custom_command(TARGET shogo_hook POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E chdir ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/copy.sh
-    COMMENT "Copying DLL to target directory"
-)

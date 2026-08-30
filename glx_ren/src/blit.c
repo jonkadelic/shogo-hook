@@ -96,15 +96,17 @@ static void update_surface_texture(surface_t* surface, bool transparency, uint16
     }
 
     uint32_t* buffer = SDL_malloc(surface->glWidth * surface->glHeight * 4);
-    uint16_t* data = (uint16_t*) surface->data;
+    uint16_t* data = (uint16_t*) surface->extern_data;
 
     if (buffer != nullptr && surface->height > 0) {
         for (size_t y = 0; y < surface->height; y++) {
             for (size_t x = 0; x < surface->width; x++) {
                 size_t i = (y * surface->width) + x;
+
+                // format is 5515 (red, green, pad, blue)
                 uint8_t red = (data[i] & 0xF800) >> 11;
                 uint8_t green = (data[i] & 0x07C0) >> 6;
-                uint8_t blue = (data[i] & 0x003F) >> 1;
+                uint8_t blue = (data[i] & 0x002E);
 
                 if (transparency && data[i] == transparent_color) {
                     buffer[(y * surface->glWidth) + x] = 0x00000000;

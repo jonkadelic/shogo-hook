@@ -1,5 +1,7 @@
 include(FetchContent)
 
+project(sdlgpu_ren LANGUAGES C)
+
 # SDL3 builds its own tests/examples by default; disable to keep this fast.
 set(SDL_TEST_LIBRARY OFF CACHE BOOL "" FORCE)
 set(SDL_TESTS OFF CACHE BOOL "" FORCE)
@@ -40,9 +42,4 @@ set_target_properties(sdlgpu_ren PROPERTIES
     SUFFIX ".ren"
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/sdlgpu_ren"
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/sdlgpu_ren"
-)
-
-add_custom_command(TARGET sdlgpu_ren POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E chdir ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/copy.sh
-    COMMENT "Copying sdlgpu.ren to target directory"
 )

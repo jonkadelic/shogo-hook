@@ -94,7 +94,7 @@ RMode_t* GetSupportedModes(void) {
 
         for (int j = 0; j < num_display_modes; j++) {
             num_rmodes++;
-            rmodes = realloc(rmodes, sizeof(RMode_t) * num_rmodes);
+            rmodes = SDL_realloc(rmodes, sizeof(RMode_t) * num_rmodes);
             DEBUG_ASSERT(rmodes != nullptr);
 
             SDL_DisplayMode* mode = display_modes[j];
@@ -136,7 +136,7 @@ RMode_t* GetSupportedModes(void) {
         }
 
         num_rmodes++;
-        rmodes = realloc(rmodes, sizeof(RMode_t) * num_rmodes);
+        rmodes = SDL_realloc(rmodes, sizeof(RMode_t) * num_rmodes);
         DEBUG_ASSERT(rmodes != nullptr);
 
         RMode_t* rmode = &rmodes[num_rmodes - 1];
@@ -162,7 +162,7 @@ RMode_t* GetSupportedModes(void) {
     return rmodes;
 
 err:
-    free(rmodes);
+    SDL_free(rmodes);
     SDL_free(displays);
     SDL_free(display_modes);
     SDL_Quit();
@@ -170,5 +170,5 @@ err:
 }
 
 void FreeModeList(RMode_t* modes) {
-    free(modes);
+    SDL_free(modes);
 }
