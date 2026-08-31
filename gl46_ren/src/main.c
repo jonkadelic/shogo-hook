@@ -33,6 +33,8 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID) {
 }
 
 void RenderDLLSetup(RenderStruct_t* pStruct) {
+    RENDER_STRUCT = pStruct;
+    
     pStruct->Init = r_Init;
     pStruct->Term = r_Term;
     pStruct->BindTexture = r_BindTexture;

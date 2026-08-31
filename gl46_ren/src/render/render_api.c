@@ -3,6 +3,8 @@
 #include "logger.h"
 #include "renderer.h"
 
+RenderStruct_t* RENDER_STRUCT = nullptr;
+
 uint32_t __cdecl r_Init(RenderStructInit_t* pInit) {
     LOG_FUNC();
 
@@ -25,6 +27,11 @@ void __cdecl r_SetSoftSky(SharedTexture_t** ppTex) {
 
 void __cdecl r_BindTexture(SharedTexture_t* pTex, uint8_t bTextureChanged) {
     LOG_FUNC();
+
+    auto data = RENDER_STRUCT->GetTexture(pTex, 0);
+    if (data != nullptr) {
+        RENDER_STRUCT->FreeTexture(pTex);
+    }
 }
 
 void __cdecl r_UnbindTexture(SharedTexture_t* pTex) {
@@ -88,6 +95,18 @@ DBOOL __cdecl r_IsInOptimized2D(void) {
 
 uint32_t __cdecl r_RenderScene(SceneDesc_t* pSceneDesc) {
     LOG_FUNC();
+
+    float aspect = (float) (pSceneDesc->m_Rect.right - pSceneDesc->m_Rect.left) / (float) (pSceneDesc->m_Rect.bottom - pSceneDesc->m_Rect.top);
+    renderer__set_camera(pSceneDesc->m_Pos, pSceneDesc->m_Rotation, pSceneDesc->m_yFov, aspect);
+
+    if (pSceneDesc->m_DrawMode == SceneDrawMode_Normal) {
+
+    } else if (pSceneDesc->m_DrawMode == SceneDrawMode_ObjectList) {
+        for (size_t i = 0; i < pSceneDesc->m_nObjectListSize; i++) {
+            renderer__draw_object(pSceneDesc->m_pObjectList[i]);
+        }
+    }
+
     return true;
 }
 
@@ -200,7 +219,10 @@ void __cdecl r_UnoptimizeSurface(void* pSurface) {
 
 DBOOL __cdecl r_LockScreen(int32_t left, int32_t top, int32_t right, int32_t bottom, void** pData, int32_t* pPitch) {
     LOG_FUNC();
-    return false;
+    static uint32_t buffer[1920 * 1080];
+    *pData = buffer;
+    *pPitch = 1920 * sizeof(uint32_t);
+    return true;
 }
 
 void __cdecl r_UnlockScreen(void) {

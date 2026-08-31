@@ -2,6 +2,8 @@
 
 #include <lithtech/lithtech.h>
 
+extern RenderStruct_t* RENDER_STRUCT;
+
 uint32_t __cdecl r_Init(RenderStructInit_t* pInit);
 void __cdecl r_Term(void);
 void __cdecl r_SetSoftSky(SharedTexture_t** ppTex);

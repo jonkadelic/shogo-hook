@@ -8,6 +8,7 @@
 
 #include "logger.h"
 #include "render/blitter.h"
+#include "render/object/objects.h"
 #include "shaders/shaders.h"
 
 typedef struct renderer {
@@ -22,6 +23,15 @@ typedef struct renderer {
     tessellator_t tessellator;
     shader_t shaders[NUM_SHADER_IDS];
     blitter_t blitter;
+    object_manager_t objects;
+    shared_texture_manager_t shared_textures;
+
+    struct {
+        DVector_t pos;
+        DRotation_t rotation;
+        float fov_y;
+        float aspect;
+    } camera;
 } renderer_t;
 
 static renderer_t RENDERER = { 0 };
@@ -120,6 +130,18 @@ bool renderer__init(RMode_t const* rmode, void* hwnd) {
         goto err;
     }
 
+    // Init object manager
+    if (!object_manager__init(&RENDERER.objects, &RENDERER.tessellator)) {
+        LOG_FATAL("Failed to init object manager");
+        goto err;
+    }
+
+    // Init shared texture manager
+    if (!shared_texture_manager__init(&RENDERER.shared_textures)) {
+        LOG_FATAL("Failed to init shared texture manager");
+        goto err;
+    }
+
     return true;
 
 err:
@@ -139,6 +161,10 @@ void renderer__cleanup(void) {
 }
 
 void renderer__reset(void) {
+    shared_texture_manager__cleanup(&RENDERER.shared_textures);
+
+    object_manager__cleanup(&RENDERER.objects);
+
     blitter__cleanup(&RENDERER.blitter);
 
     for (shader_id_t i = 0; i < NUM_SHADER_IDS; i++) {
@@ -201,6 +227,32 @@ void renderer__swap_buffers(void) {
     SDL_GL_SwapWindow(RENDERER.window);
 }
 
+void renderer__draw_object(DObject_t const* object) {
+    object_manager__draw(&RENDERER.objects, object);
+}
+
+void renderer__set_camera(DVector_t pos, DRotation_t rotation, float fov_y, float aspect) {
+    RENDERER.camera.pos = pos;
+    RENDERER.camera.rotation = rotation;
+    RENDERER.camera.fov_y = fov_y;
+    RENDERER.camera.aspect = aspect;
+}
+
+HMM_Mat4 renderer__get_view_projection_matrix(void) {
+    HMM_Mat4 camera_matrix = HMM_MulM4(
+        HMM_Translate(HMM_V3(RENDERER.camera.pos.x, RENDERER.camera.pos.y, RENDERER.camera.pos.z)),
+        HMM_QToM4(HMM_Q(
+            RENDERER.camera.rotation.m_Vec.x, RENDERER.camera.rotation.m_Vec.y,
+            RENDERER.camera.rotation.m_Vec.z, RENDERER.camera.rotation.m_Spin
+        ))
+    );
+    // Camera world matrix inverts to the view matrix since it's a rigid transform
+    HMM_Mat4 view_matrix = HMM_InvGeneralM4(camera_matrix);
+    HMM_Mat4 projection_matrix = HMM_Perspective_RH_NO(RENDERER.camera.fov_y, RENDERER.camera.aspect, 1.0f, 50000.0f);
+
+    return HMM_MulM4(projection_matrix, view_matrix);
+}
+
 surface_manager_t* renderer__get_surfaces(void) {
     return &RENDERER.surfaces;
 }
@@ -215,6 +267,10 @@ shader_t const* renderer__get_shaders(void) {
 
 blitter_t* renderer__get_blitter(void) {
     return &RENDERER.blitter;
+}
+
+shared_texture_manager_t* renderer__get_shared_textures(void) {
+    return &RENDERER.shared_textures;
 }
 
 static void gl_debug_log(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, GLchar const* message, void const* user_param) {

@@ -36,8 +36,8 @@ static_assert(offsetof(RenderStructInit_t, m_hWnd) == 0x01a4);
 
 typedef struct RenderStruct {
     void* ProcessAttachment;
-    void* GetTexture;
-    void* FreeTexture;
+    TextureData_t* (__cdecl *GetTexture)(SharedTexture_t* pTex, uint32_t);
+    void (__cdecl *FreeTexture)(SharedTexture_t* pTex);
     void* GetLightmap;
     void* GetPaletteColors;
     void* GetPaletteUserData;

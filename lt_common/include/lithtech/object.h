@@ -71,7 +71,7 @@ static_assert(offsetof(DObject_t, m_HalfSize) == 0xb8);
 typedef struct PolyGrid {
     DObject_t base;
     uint32_t unk_00c4[25];
-    uint8_t* m_pData;
+    int8_t* m_pData; // length = m_Width * m_Height
     uint16_t* m_pIndices;
     void* m_pSprite;
     SpriteTracker_t m_SpriteTracker;
@@ -83,8 +83,8 @@ typedef struct PolyGrid {
     uint32_t m_nTris; // = (m_Width - 1) * (m_Height - 1) * 2
     uint32_t m_nIndices; // = m_nTris * 3
     DLink_t m_LeafLinks;
-    uint32_t m_Width;
-    uint32_t m_Height;
+    uint32_t m_Width;   // number of points along X axis
+    uint32_t m_Height;  // number of points along Z axis
     float m_ColorTable[256][4];
 } PolyGrid_t;
 static_assert(sizeof(PolyGrid_t) == 0x1178);
