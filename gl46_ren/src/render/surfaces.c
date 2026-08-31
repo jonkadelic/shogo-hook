@@ -62,7 +62,7 @@ surface_t* surface_manager__create_surface(surface_manager_t* self, int32_t widt
         self->surfaces = new_surfaces;
     }
 
-    *surface = SDL_calloc(1, sizeof(surface_t) + width * height * sizeof(uint16_t));
+    *surface = SDL_calloc(1, sizeof(surface_t));
     if (*surface == nullptr) {
         LOG_ERROR("Failed to allocate surface");
         goto err;
@@ -77,10 +77,16 @@ surface_t* surface_manager__create_surface(surface_manager_t* self, int32_t widt
         goto err;
     }
 
+    if (!rect_buffer__init(&(*surface)->buffer, width, height, 2)) {
+        LOG_ERROR("Failed to create surface buffer");
+        goto err;
+    }
+
     return *surface;
 
 err:
     if (*surface != nullptr) {
+        rect_buffer__cleanup(&(*surface)->buffer);
         texture__cleanup(&(*surface)->texture);
     }
     SDL_free(*surface);
@@ -93,6 +99,7 @@ void surface_manager__delete_surface(surface_manager_t* self, size_t idx) {
     auto surface = self->surfaces[idx];
     if (surface == nullptr) return;
 
+    rect_buffer__cleanup(&surface->buffer);
     texture__cleanup(&surface->texture);
     SDL_free(self->surfaces[idx]);
     self->surfaces[idx] = nullptr;
@@ -113,15 +120,17 @@ void surface__update_texture(surface_t* self, bool transparency, uint16_t transp
         return;
     }
 
+    uint16_t const* extern_data = (uint16_t const*) self->buffer.data;
+
     for (size_t y = 0; y < self->height; y++) {
         for (size_t x = 0; x < self->width; x++) {
             size_t i = (y * self->width) + x;
 
-            uint8_t red = (self->extern_data[i] & 0xF800) >> 11;
-            uint8_t green = (self->extern_data[i] & 0x07C0) >> 6;
-            uint8_t blue = (self->extern_data[i] & 0x003F) >> 0;
+            uint8_t red = (extern_data[i] & 0xF800) >> 11;
+            uint8_t green = (extern_data[i] & 0x07C0) >> 6;
+            uint8_t blue = (extern_data[i] & 0x003F) >> 0;
 
-            if (transparency && self->extern_data[i] == transparent_color) {
+            if (transparency && extern_data[i] == transparent_color) {
                 buffer[i] = 0x00000000;
             } else {
                 buffer[i] = 0xFF000000 |

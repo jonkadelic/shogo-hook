@@ -67,17 +67,27 @@ void polygrid__draw(object_data_t* self, tessellator_t* tessellator, DObject_t c
         polygrid_data->height = polygrid->m_Height;
     }
 
-    // Create SSBO if needed
+    // Create SSBOs if needed
     if (polygrid_data->gl_offsets_ssbo == 0) {
         glCreateBuffers(1, &polygrid_data->gl_offsets_ssbo);
         if (polygrid_data->gl_offsets_ssbo == 0) {
-            LOG_ERROR("Failed to init offset SSBO");
+            LOG_ERROR("Failed to init offsets SSBO");
+            return;
+        }
+    }
+    if (polygrid_data->gl_colors_ssbo == 0) {
+        glCreateBuffers(1, &polygrid_data->gl_colors_ssbo);
+        if (polygrid_data->gl_colors_ssbo == 0) {
+            LOG_ERROR("Failed to init colors SSBO");
             return;
         }
     }
 
     // Upload new offsets to SSBO
     glNamedBufferData(polygrid_data->gl_offsets_ssbo, sizeof(int8_t) * polygrid->m_Width * polygrid->m_Height, polygrid->m_pData, GL_STREAM_DRAW);
+
+    // Upload new colors to SSBO
+    glNamedBufferData(polygrid_data->gl_colors_ssbo, sizeof(float) * 256 * 4, polygrid->m_ColorTable, GL_STREAM_DRAW);
 
     HMM_Mat4 projection_matrix = renderer__get_view_projection_matrix();
 
@@ -112,8 +122,9 @@ void polygrid__draw(object_data_t* self, tessellator_t* tessellator, DObject_t c
 
     shader__set_uniform_texture(shader, "u_texture", texture);
 
-    // Bind SSBO
+    // Bind SSBOs
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, polygrid_data->gl_offsets_ssbo);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, polygrid_data->gl_colors_ssbo);
 
     // Draw mesh
     mesh__draw(&polygrid_data->mesh);

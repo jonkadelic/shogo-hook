@@ -18,6 +18,9 @@ uint32_t __cdecl r_Init(RenderStructInit_t* pInit) {
 void __cdecl r_Term(void) {
     LOG_FUNC();
 
+    call_stats__log_all();
+    call_stats__clear();
+
     renderer__reset();
 }
 
@@ -116,6 +119,14 @@ void __cdecl r_RenderCommand(uint32_t argc, char** argv) {
 
 void* __cdecl r_GetHook(char* pHook) {
     LOG_FUNC();
+    
+    if (strcmp(pHook, "LPDIRECTDRAW") == 0) {
+        return &renderer__get_instance()->ddraw.iface;
+    }
+    if (strcmp(pHook, "BACKBUFFER") == 0) {
+        return &renderer__get_instance()->ddraw.backbuffer;
+    }
+
     return nullptr;
 }
 
@@ -194,7 +205,7 @@ void* __cdecl r_LockSurface(void* pSurface) {
     }
 
     surface->locked = true;
-    return surface->extern_data;
+    return surface->buffer.data;
 }
 
 void __cdecl r_UnlockSurface(void* pSurface) {
@@ -219,10 +230,7 @@ void __cdecl r_UnoptimizeSurface(void* pSurface) {
 
 DBOOL __cdecl r_LockScreen(int32_t left, int32_t top, int32_t right, int32_t bottom, void** pData, int32_t* pPitch) {
     LOG_FUNC();
-    static uint32_t buffer[1920 * 1080];
-    *pData = buffer;
-    *pPitch = 1920 * sizeof(uint32_t);
-    return true;
+    return false;
 }
 
 void __cdecl r_UnlockScreen(void) {

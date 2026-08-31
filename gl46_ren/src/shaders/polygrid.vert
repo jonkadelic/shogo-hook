@@ -15,6 +15,9 @@ layout(binding = 1, std430) readonly buffer ssbo1 {
 layout(binding = 2, std430) readonly buffer ssbo2 {
     int offsets[];
 };
+layout(binding = 3, std430) readonly buffer ssbo3 {
+    vec4 colors[];
+};
 
 vec3 get_position(int index) {
     return vec3(
@@ -24,13 +27,8 @@ vec3 get_position(int index) {
     );
 }
 
-vec4 get_color(int index) {
-    return vec4(
-        vertices[index].color[0],
-        vertices[index].color[1],
-        vertices[index].color[2],
-        vertices[index].color[3]
-    );
+vec4 get_color(int offset) {
+    return colors[offset] / 255.0;
 }
 
 vec2 get_uv(int index) {
@@ -67,9 +65,7 @@ void main() {
     vec3 pos = get_position(index);
     pos.y += offset;
 
-    float br = (offset + 128.0) / 255.0;
-
     gl_Position = u_projection * u_model * vec4(pos, 1.0);
-    fs_color = get_color(index) * vec4(br, br, br, 1.0);
+    fs_color = get_color(offset + 128);
     fs_uv = get_uv(index);
 }

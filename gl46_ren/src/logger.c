@@ -53,7 +53,11 @@ void logger__log(log_level_t level, char const* fmt, ...) {
 
     if (LOG_FILE != nullptr) {
         fprintf(LOG_FILE, "[%0.3f] (%s) %s\n", (float) ticks / 1000.0f, LOG_LEVEL_STRS[level], msg_buf);
-        fflush(LOG_FILE);
+        if (fflush(LOG_FILE) != 0) {
+            fclose(LOG_FILE);
+            fopen("latest.log", "wb");
+            fprintf(LOG_FILE, "[%0.3f] (%s) %s\n", (float) ticks / 1000.0f, LOG_LEVEL_STRS[level], msg_buf);
+        }
     }
 
     if (level == LOG_LEVEL__FATAL) {

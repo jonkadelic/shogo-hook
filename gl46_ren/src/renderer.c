@@ -11,34 +11,15 @@
 #include "render/object/objects.h"
 #include "shaders/shaders.h"
 
-typedef struct renderer {
-    bool in_3d;
-    bool in_2d;
-
-    void* hwnd;
-    SDL_Window* window;
-    SDL_GLContext gl_context;
-
-    surface_manager_t surfaces;
-    tessellator_t tessellator;
-    shader_t shaders[NUM_SHADER_IDS];
-    blitter_t blitter;
-    object_manager_t objects;
-    shared_texture_manager_t shared_textures;
-
-    struct {
-        DVector_t pos;
-        DRotation_t rotation;
-        float fov_y;
-        float aspect;
-    } camera;
-} renderer_t;
-
 static renderer_t RENDERER = { 0 };
 
 static void __stdcall gl_debug_log(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, GLchar const* message, void const* user_param);
 
 static bool init_display(RMode_t const* rmode);
+
+renderer_t* renderer__get_instance(void) {
+    return &RENDERER;
+}
 
 bool renderer__init(RMode_t const* rmode, void* hwnd) {
     SDL_PropertiesID props = 0;
@@ -142,6 +123,30 @@ bool renderer__init(RMode_t const* rmode, void* hwnd) {
         goto err;
     }
 
+    // Init DirectDraw interface
+    if (!ddraw_iface__init(&RENDERER.ddraw.iface, &RENDERER)) {
+        LOG_FATAL("Failed to init DirectDraw interface");
+        goto err;
+    }
+
+    // Init DirectDraw backbuffer
+    if (!ddraw_backbuffer__init(&RENDERER.ddraw.backbuffer, &RENDERER.ddraw.iface)) {
+        LOG_FATAL("Failed to init DirectDraw backbuffer");
+        goto err;
+    }
+
+    // Init screen texture
+    if (!texture__init(&RENDERER.screen.texture)) {
+        LOG_FATAL("Failed to init screen texture");
+        goto err;
+    }
+
+    // Init screen rect buffer
+    if (!rect_buffer__init(&RENDERER.screen.buffer, rmode->m_Width, rmode->m_Height, 4)) {
+        LOG_FATAL("Failed to init screen rect buffer");
+        goto err;
+    }
+
     return true;
 
 err:
@@ -152,6 +157,9 @@ err:
 
 void renderer__cleanup(void) {
     renderer__reset();
+
+    ddraw_backbuffer__cleanup(&RENDERER.ddraw.backbuffer);
+    ddraw_iface__cleanup(&RENDERER.ddraw.iface);
 
     SDL_GL_DestroyContext(RENDERER.gl_context);
     RENDERER.gl_context = nullptr;

@@ -5,13 +5,14 @@
 #include <glad/gl.h>
 
 #include "render/texture.h"
+#include "util/rect_buffer.h"
 
 typedef struct surface {
     size_t idx;
     int32_t width, height;
     bool locked;
     texture_t texture;
-    uint16_t extern_data[];
+    rect_buffer_t buffer;
 } surface_t;
 
 typedef struct surface_manager {
