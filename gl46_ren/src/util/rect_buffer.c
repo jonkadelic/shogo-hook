@@ -35,21 +35,22 @@ void rect_buffer__cleanup(rect_buffer_t* self) {
     SDL_free(self->data); self->data = nullptr;
 }
 
-void rect_buffer__clear(rect_buffer_t* self, rect_t* opt_dst_rect, size_t clear_to) {
+void rect_buffer__clear(rect_buffer_t* self, rect_t* opt_dst_rect, uint32_t clear_to) {
     rect_t dst_rect = self->dims;
     if (opt_dst_rect != nullptr) {
         dst_rect = *opt_dst_rect;
     }
     clamp_rect(&dst_rect, &self->dims);
+    if (dst_rect.x0 >= dst_rect.x1 || dst_rect.y0 >= dst_rect.y1) return;
 
     size_t width = dst_rect.x1 - dst_rect.x0;
     size_t height = dst_rect.y1 - dst_rect.y0;
 
     for (size_t y = dst_rect.y0; y < dst_rect.y1; y++) {
         for (size_t x = dst_rect.x0; x < dst_rect.x1; x++) {
-            size_t i = (y * width * self->bpp) + (x * self->bpp);
+            size_t i = (y * self->width * self->bpp) + (x * self->bpp);
 
-            memcpy(self->data + i, &clear_to, self->bpp);
+            SDL_memcpy(self->data + i, &clear_to, self->bpp);
         }
     }
 }
@@ -59,27 +60,30 @@ bool rect_buffer__copy(rect_buffer_t* self, rect_buffer_t const* src, rect_t* op
     if (opt_src_rect != nullptr) {
         src_rect = *opt_src_rect;
     }
+    clamp_rect(&src_rect, &src->dims);
+    if (src_rect.x0 >= src_rect.x1 || src_rect.y0 >= src_rect.y1) return false;
+
     rect_t dst_rect = self->dims;
     if (opt_dst_rect != nullptr) {
         dst_rect = *opt_dst_rect;
     }
+    clamp_rect(&dst_rect, &self->dims);
+    if (dst_rect.x0 >= dst_rect.x1 || dst_rect.y0 >= dst_rect.y1) return false;
 
-    if (self->bpp != src->bpp) {
-        LOG_WARNING("BPP-converting copy not yet implemented!");
-        return true;
-    }
+    size_t target_bpp = SDL_min(self->bpp, src->bpp);
 
-    if (SDL_memcmp(&src_rect, &dst_rect, sizeof(rect_t)) == 0) {
+    if ((src_rect.x1 - src_rect.x0) == (dst_rect.x1 - dst_rect.x0) && (src_rect.y1 - src_rect.y0) == (dst_rect.y1 - dst_rect.y0)) {
         // Do a fast copy (no scaling)
         size_t width = dst_rect.x1 - dst_rect.x0;
         size_t height = dst_rect.y1 - dst_rect.y0;
 
         for (size_t y = 0; y < height; y++) {
             for (size_t x = 0; x < width; x++) {
-                size_t src_i = ((y + src_rect.y0) * (width * src->bpp)) + ((x + src_rect.x0) * src->bpp);
-                size_t dst_i = ((y + dst_rect.y0) * (width * self->bpp)) + ((x + dst_rect.x0) * self->bpp);
+                size_t src_i = ((y + src_rect.y0) * (src->width * src->bpp)) + ((x + src_rect.x0) * src->bpp);
+                size_t dst_i = ((y + dst_rect.y0) * (self->width * self->bpp)) + ((x + dst_rect.x0) * self->bpp);
 
-                memcpy(self->data + dst_i, src->data + src_i, self->bpp);
+                SDL_memset(self->data + dst_i, 0xFF, self->bpp);
+                SDL_memcpy(self->data + dst_i, src->data + src_i, target_bpp);
             }
         }
     } else {
@@ -87,6 +91,8 @@ bool rect_buffer__copy(rect_buffer_t* self, rect_buffer_t const* src, rect_t* op
         LOG_WARNING("Scaling copy not yet implemented!");
         return true;
     }
+
+    return true;
 }
 
 static void clamp_rect(rect_t* rect, rect_t const* bounds) {

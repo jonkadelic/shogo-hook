@@ -82,7 +82,7 @@ void blitter__blit_request(blitter_t* self, BlitRequest_t const* request) {
     shader__bind(self->shader);
     shader__set_uniform_texture(self->shader, "u_texture", &surface->texture);
 
-    auto model_matrix = HMM_MulM4(
+    auto model_matrix = HMM_Mul(
         HMM_Translate((HMM_Vec3) { dest->left, dest->top, 0.0f }),
         HMM_Scale((HMM_Vec3) { dest->right - dest->left, dest->bottom - dest->top })
     );

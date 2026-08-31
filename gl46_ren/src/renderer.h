@@ -8,6 +8,7 @@
 #include "ddraw_emu/ddraw_iface.h"
 #include "render/blitter.h"
 #include "render/object/objects.h"
+#include "render/screen.h"
 #include "render/shader.h"
 #include "render/shared_textures.h"
 #include "render/surfaces.h"
@@ -28,6 +29,7 @@ typedef struct renderer {
     blitter_t blitter;
     object_manager_t objects;
     shared_texture_manager_t shared_textures;
+    screen_t screen;
 
     struct {
         DVector_t pos;
@@ -40,12 +42,6 @@ typedef struct renderer {
         ddraw_iface_t iface;
         ddraw_backbuffer_t backbuffer;
     } ddraw;
-
-    struct {
-        bool locked;
-        texture_t texture;
-        rect_buffer_t buffer;
-    } screen;
 } renderer_t;
 
 renderer_t* renderer__get_instance(void);

@@ -88,7 +88,7 @@ static shared_texture_t* create_texture(shared_texture_manager_t* self, TextureD
 
     out->path_hash = path_hash;
 
-    if (!texture__init(&out->texture)) {
+    if (!texture__init(&out->texture, nullptr)) {
         LOG_ERROR("Failed to init shared texture");
         goto err;
     }
@@ -105,7 +105,7 @@ static shared_texture_t* create_texture(shared_texture_manager_t* self, TextureD
         tbuf[i] = argb;
     }
 
-    texture__upload(&out->texture, texture_data->m_Width, texture_data->m_Height, tbuf);
+    texture__upload(&out->texture, texture_data->m_Width, texture_data->m_Height, 4, tbuf);
     SDL_free(tbuf); tbuf = nullptr;
 
     // Sort textures

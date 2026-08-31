@@ -72,7 +72,7 @@ surface_t* surface_manager__create_surface(surface_manager_t* self, int32_t widt
     (*surface)->width = width;
     (*surface)->height = height;
 
-    if (!texture__init(&(*surface)->texture)) {
+    if (!texture__init(&(*surface)->texture, nullptr)) {
         LOG_ERROR("Failed to create surface texture");
         goto err;
     }
@@ -127,8 +127,8 @@ void surface__update_texture(surface_t* self, bool transparency, uint16_t transp
             size_t i = (y * self->width) + x;
 
             uint8_t red = (extern_data[i] & 0xF800) >> 11;
-            uint8_t green = (extern_data[i] & 0x07C0) >> 6;
-            uint8_t blue = (extern_data[i] & 0x003F) >> 0;
+            uint8_t green = (extern_data[i] & 0x07E0) >> 6;
+            uint8_t blue = (extern_data[i] & 0x001F) >> 0;
 
             if (transparency && extern_data[i] == transparent_color) {
                 buffer[i] = 0x00000000;
@@ -140,7 +140,7 @@ void surface__update_texture(surface_t* self, bool transparency, uint16_t transp
             }
         }
 
-        texture__upload(&self->texture, self->width, self->height, buffer);
+        texture__upload(&self->texture, self->width, self->height, 4, buffer);
     }
 
     SDL_free(buffer);

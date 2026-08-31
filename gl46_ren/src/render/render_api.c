@@ -230,7 +230,28 @@ void __cdecl r_UnoptimizeSurface(void* pSurface) {
 
 DBOOL __cdecl r_LockScreen(int32_t left, int32_t top, int32_t right, int32_t bottom, void** pData, int32_t* pPitch) {
     LOG_FUNC();
-    return false;
+
+    auto r = renderer__get_instance();
+
+    if (left < 0 || top < 0 || right < 0 || bottom < 0 || left >= r->screen.buffer.width || top >= r->screen.buffer.height || right > r->screen.buffer.width || bottom > r->screen.buffer.height) {
+        return false;
+    }
+    if (left >= right || top >= bottom) {
+        return false;
+    }
+
+    void* data = screen__lock(&r->screen);
+    if (data == nullptr) {
+        return false;
+    }
+
+    size_t width = right - left;
+    *pPitch = r->screen.buffer.width * r->screen.buffer.bpp;
+
+    size_t i = (top * (r->screen.buffer.width * r->screen.buffer.bpp)) + (left * r->screen.buffer.bpp);
+    *pData = ((uint8_t*) data) + i;
+
+    return true;
 }
 
 void __cdecl r_UnlockScreen(void) {

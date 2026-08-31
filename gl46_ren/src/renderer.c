@@ -9,6 +9,7 @@
 #include "logger.h"
 #include "render/blitter.h"
 #include "render/object/objects.h"
+#include "render/render_api.h"
 #include "shaders/shaders.h"
 
 static renderer_t RENDERER = { 0 };
@@ -123,6 +124,12 @@ bool renderer__init(RMode_t const* rmode, void* hwnd) {
         goto err;
     }
 
+    // Init screen
+    if (!screen__init(&RENDERER.screen, rmode->m_Width, rmode->m_Height)) {
+        LOG_FATAL("Failed to init screen");
+        goto err;
+    }
+
     // Init DirectDraw interface
     if (!ddraw_iface__init(&RENDERER.ddraw.iface, &RENDERER)) {
         LOG_FATAL("Failed to init DirectDraw interface");
@@ -132,18 +139,6 @@ bool renderer__init(RMode_t const* rmode, void* hwnd) {
     // Init DirectDraw backbuffer
     if (!ddraw_backbuffer__init(&RENDERER.ddraw.backbuffer, &RENDERER.ddraw.iface)) {
         LOG_FATAL("Failed to init DirectDraw backbuffer");
-        goto err;
-    }
-
-    // Init screen texture
-    if (!texture__init(&RENDERER.screen.texture)) {
-        LOG_FATAL("Failed to init screen texture");
-        goto err;
-    }
-
-    // Init screen rect buffer
-    if (!rect_buffer__init(&RENDERER.screen.buffer, rmode->m_Width, rmode->m_Height, 4)) {
-        LOG_FATAL("Failed to init screen rect buffer");
         goto err;
     }
 
@@ -232,6 +227,8 @@ void renderer__swap_buffers(void) {
         return;
     }
 
+    screen__draw(&RENDERER.screen);
+    screen__clear(&RENDERER.screen);
     SDL_GL_SwapWindow(RENDERER.window);
 }
 

@@ -19,5 +19,5 @@ typedef struct rect_buffer {
 bool rect_buffer__init(rect_buffer_t* self, size_t width, size_t height, size_t bpp);
 void rect_buffer__cleanup(rect_buffer_t* self);
 
-void rect_buffer__clear(rect_buffer_t* self, rect_t* opt_dst_rect, size_t clear_to);
+void rect_buffer__clear(rect_buffer_t* self, rect_t* opt_dst_rect, uint32_t clear_to);
 bool rect_buffer__copy(rect_buffer_t* self, rect_buffer_t const* src, rect_t* opt_src_rect, rect_t* opt_dst_rect);
