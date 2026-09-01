@@ -22,10 +22,11 @@ typedef struct pixel_buffer {
     GLuint gl_pixel_buffer;
     GLuint gl_texture;
     GLuint gl_framebuffer;
-    void* data;
+    void* pixel_data;
 } pixel_buffer_t;
 
 bool pixel_buffer__init(pixel_buffer_t* self, size_t width, size_t height, color_format_t format);
+bool pixel_buffer__init_backbuffer(pixel_buffer_t* self);
 void pixel_buffer__cleanup(pixel_buffer_t* self);
 
 void pixel_buffer__blit(pixel_buffer_t* self);

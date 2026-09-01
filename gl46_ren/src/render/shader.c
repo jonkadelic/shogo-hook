@@ -216,6 +216,10 @@ void shader__bind(shader_t const* self) {
 }
 
 void shader__set_uniform_texture(shader_t const* self, char const* name, texture_t const* texture) {
+    shader__set_uniform_texture_raw(self, name, texture->gl_texture);
+}
+
+void shader__set_uniform_texture_raw(shader_t const* self, char const* name, GLuint gl_texture) {
     uint64_t name_hash = hash__fnv1a_64(FNV1_64A_INIT, strlen(name), name);
     shader_uniform_t* uniform = SDL_bsearch(&name_hash, self->uniforms, self->num_uniforms, sizeof(shader_uniform_t), compare_uniforms_by_hash);
     if (uniform == nullptr) {
@@ -223,7 +227,7 @@ void shader__set_uniform_texture(shader_t const* self, char const* name, texture
         return;
     }
 
-    if (texture->gl_texture == 0) {
+    if (gl_texture == 0) {
         LOG_WARNING("Attempted to bind invalid texture");
         return;
     }
@@ -234,7 +238,7 @@ void shader__set_uniform_texture(shader_t const* self, char const* name, texture
         return;
     }
 
-    texture__bind(texture, sampler->texture_unit);
+    glBindTextureUnit(sampler->texture_unit, gl_texture);
 }
 
 void shader__set_uniform_mat4f(shader_t const* self, char const* name, HMM_Mat4 const* mat4) {

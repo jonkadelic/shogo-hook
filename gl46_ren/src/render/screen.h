@@ -9,7 +9,6 @@
 typedef struct screen {
     bool locked;
     mesh_t mesh;
-    texture_t texture;
     pixel_buffer_t buffer;
 } screen_t;
 

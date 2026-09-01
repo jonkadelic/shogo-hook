@@ -249,10 +249,14 @@ STDMETHODIMP dsurface_Blt(THIS_ LPRECT dst_rect, LPDIRECTDRAWSURFACE4 src_surfac
 
     if (src_surface != nullptr) {
         ddraw_surface_t* surface = (ddraw_surface_t*) src_surface;
+        pixel_buffer__blit(surface->buffer);
+
         if (!pixel_buffer__copy(self->buffer, surface->buffer, p_src_rect, p_dst_rect)) {
             return DDERR_INVALIDRECT;
         }
     }
+
+    pixel_buffer__blit(self->buffer);
 
     return DD_OK;
 }
@@ -382,7 +386,7 @@ STDMETHODIMP dsurface_Lock(THIS_ LPRECT dst_rect, LPDDSURFACEDESC2 desc, DWORD f
     desc->dwWidth = self->buffer->width;
     desc->dwHeight = self->buffer->height;
     desc->lPitch = pitch;
-    desc->lpSurface = self->buffer->data + (top * pitch) + (left * bpp);
+    desc->lpSurface = self->buffer->pixel_data + (top * pitch) + (left * bpp);
     desc->ddpfPixelFormat = self->format;
     desc->ddpfPixelFormat.dwSize = sizeof(desc->ddpfPixelFormat);
 

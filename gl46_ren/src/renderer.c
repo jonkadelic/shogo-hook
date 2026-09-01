@@ -124,6 +124,12 @@ bool renderer__init(RMode_t const* rmode, void* hwnd) {
         goto err;
     }
 
+    // Init backbuffer
+    if (!pixel_buffer__init_backbuffer(&RENDERER.backbuffer)) {
+        LOG_FATAL("Failed to init backbuffer pixel buffer");
+        goto err;
+    }
+
     // Init screen
     if (!screen__init(&RENDERER.screen, rmode->m_Width, rmode->m_Height)) {
         LOG_FATAL("Failed to init screen");
@@ -137,7 +143,7 @@ bool renderer__init(RMode_t const* rmode, void* hwnd) {
     }
 
     // Init DirectDraw backbuffer
-    if (!ddraw_backbuffer__init(&RENDERER.ddraw.backbuffer, &RENDERER.ddraw.iface)) {
+    if (!ddraw_backbuffer__init(&RENDERER.ddraw.backbuffer, &RENDERER.ddraw.iface, &RENDERER.backbuffer)) {
         LOG_FATAL("Failed to init DirectDraw backbuffer");
         goto err;
     }
@@ -155,6 +161,9 @@ void renderer__cleanup(void) {
 
     ddraw_backbuffer__cleanup(&RENDERER.ddraw.backbuffer);
     ddraw_iface__cleanup(&RENDERER.ddraw.iface);
+
+    screen__cleanup(&RENDERER.screen);
+    pixel_buffer__cleanup(&RENDERER.backbuffer);
 
     SDL_GL_DestroyContext(RENDERER.gl_context);
     RENDERER.gl_context = nullptr;
@@ -227,8 +236,6 @@ void renderer__swap_buffers(void) {
         return;
     }
 
-    screen__draw(&RENDERER.screen);
-    screen__clear(&RENDERER.screen);
     SDL_GL_SwapWindow(RENDERER.window);
 }
 

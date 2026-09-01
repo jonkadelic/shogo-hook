@@ -40,4 +40,5 @@ void shader__cleanup(shader_t* self);
 void shader__bind(shader_t const* self);
 
 void shader__set_uniform_texture(shader_t const* self, char const* name, texture_t const* texture);
+void shader__set_uniform_texture_raw(shader_t const* self, char const* name, GLuint gl_texture);
 void shader__set_uniform_mat4f(shader_t const* self, char const* name, HMM_Mat4 const* mat4);

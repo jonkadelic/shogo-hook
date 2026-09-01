@@ -9,7 +9,7 @@
 STDMETHODIMP_(ULONG) dbackbuffer_AddRef (THIS)  PURE;
 STDMETHODIMP_(ULONG) dbackbuffer_Release (THIS) PURE;
 
-bool ddraw_backbuffer__init(ddraw_backbuffer_t* self, ddraw_iface_t* iface) {
+bool ddraw_backbuffer__init(ddraw_backbuffer_t* self, ddraw_iface_t* iface, pixel_buffer_t* backbuffer) {
     OBJECT_ZERO_INIT(self);
 
     int w, h;
@@ -41,7 +41,7 @@ bool ddraw_backbuffer__init(ddraw_backbuffer_t* self, ddraw_iface_t* iface) {
     SDL_free(self->base.buffer);
 
     self->base.owns_buffer = false;
-    self->base.buffer = &iface->renderer->screen.buffer;
+    self->base.buffer = backbuffer;
 
     return true;
 }

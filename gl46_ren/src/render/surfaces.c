@@ -122,7 +122,7 @@ void surface__update_texture(surface_t* self, bool transparency, uint16_t transp
         return;
     }
 
-    uint16_t const* extern_data = (uint16_t const*) self->buffer.data;
+    uint16_t const* extern_data = (uint16_t const*) self->buffer.pixel_data;
 
     for (size_t y = 0; y < self->height; y++) {
         for (size_t x = 0; x < self->width; x++) {

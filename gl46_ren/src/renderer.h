@@ -29,6 +29,7 @@ typedef struct renderer {
     blitter_t blitter;
     object_manager_t objects;
     shared_texture_manager_t shared_textures;
+    pixel_buffer_t backbuffer;
     screen_t screen;
 
     struct {

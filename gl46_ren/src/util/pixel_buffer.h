@@ -20,7 +20,7 @@ typedef struct pixel_buffer {
     rect_t dims;
 
     GLuint gl_pixel_buffer;
-    void* data;
+    void* pixel_data;
 } pixel_buffer_t;
 
 bool pixel_buffer__init(pixel_buffer_t* self, size_t width, size_t height, color_format_t format);

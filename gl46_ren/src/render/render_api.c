@@ -132,6 +132,11 @@ void* __cdecl r_GetHook(char* pHook) {
 
 void __cdecl r_SwapBuffers(void) {
     LOG_FUNC();
+
+    auto r = renderer__get_instance();
+    screen__draw(&r->screen);
+    screen__clear(&r->screen);
+
     renderer__swap_buffers();
 }
 
@@ -205,7 +210,7 @@ void* __cdecl r_LockSurface(void* pSurface) {
     }
 
     surface->locked = true;
-    return surface->buffer.data;
+    return surface->buffer.pixel_data;
 }
 
 void __cdecl r_UnlockSurface(void* pSurface) {
@@ -233,7 +238,9 @@ DBOOL __cdecl r_LockScreen(int32_t left, int32_t top, int32_t right, int32_t bot
 
     auto r = renderer__get_instance();
 
-    if (left < 0 || top < 0 || right < 0 || bottom < 0 || left >= r->screen.buffer.width || top >= r->screen.buffer.height || right > r->screen.buffer.width || bottom > r->screen.buffer.height) {
+    pixel_buffer_t* buf = &r->screen.buffer;
+
+    if (left < 0 || top < 0 || right < 0 || bottom < 0 || left >= buf->width || top >= buf->height || right > buf->width || bottom > buf->height) {
         return false;
     }
     if (left >= right || top >= bottom) {
@@ -241,16 +248,13 @@ DBOOL __cdecl r_LockScreen(int32_t left, int32_t top, int32_t right, int32_t bot
     }
 
     void* data = screen__lock(&r->screen);
-    if (data == nullptr) {
-        return false;
-    }
 
-    auto screen_bpp = color_format__get_bpp(r->screen.buffer.format);
+    auto screen_bpp = color_format__get_bpp(buf->format);
 
     size_t width = right - left;
-    *pPitch = r->screen.buffer.width * screen_bpp;
+    *pPitch = buf->width * screen_bpp;
 
-    size_t i = (top * (r->screen.buffer.width * screen_bpp)) + (left * screen_bpp);
+    size_t i = (top * (buf->width * screen_bpp)) + (left * screen_bpp);
     *pData = ((uint8_t*) data) + i;
 
     return true;

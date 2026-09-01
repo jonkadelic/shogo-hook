@@ -12,16 +12,12 @@ bool screen__init(screen_t* self, size_t width, size_t height) {
         goto err;
     }
 
-    if (!texture__init(&self->texture, "Screen Texture")) {
-        LOG_ERROR("Failed to init screen texture");
-        goto err;
-    }
-
     if (!pixel_buffer__init(&self->buffer, width, height, COLOR_FORMAT__RGB565)) {
         LOG_ERROR("Failed to init 16-bit screen rect buffer");
         goto err;
     }
     pixel_buffer__clear(&self->buffer, nullptr, 0x0000);
+    glObjectLabel(GL_TEXTURE, self->buffer.gl_texture, -1, "Screen Texture");
 
     auto t = renderer__get_tessellator();
     
@@ -68,18 +64,17 @@ err:
 
 void screen__cleanup(screen_t* self) {
     pixel_buffer__cleanup(&self->buffer);
-    texture__cleanup(&self->texture);
     mesh__cleanup(&self->mesh);    
 }
 
 void* screen__lock(screen_t* self) {
     self->locked = true;
-    return self->buffer.data;
+    return self->buffer.pixel_data;
 }
 
 void screen__draw(screen_t* self) {
     if (self->locked) {
-        texture__upload_rect_buffer(&self->texture, &self->buffer);
+        pixel_buffer__blit(&self->buffer);
         self->locked = false;
     }
 
@@ -90,12 +85,12 @@ void screen__draw(screen_t* self) {
     
     shader_t* shader = &r->shaders[SHADER_ID__SCREEN];
     shader__bind(shader);
-    shader__set_uniform_texture(shader, "u_texture", &self->texture);
+    shader__set_uniform_texture_raw(shader, "u_texture", self->buffer.gl_texture);
     
     mesh__draw(&self->mesh);
 }
 
 void screen__clear(screen_t* self) {
     pixel_buffer__clear(&self->buffer, nullptr, 0x0000);
-    texture__upload_rect_buffer(&self->texture, &self->buffer);
+    pixel_buffer__blit(&self->buffer);
 }
