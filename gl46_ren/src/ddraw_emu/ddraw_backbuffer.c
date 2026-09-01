@@ -8,7 +8,6 @@
 #define INTERFACE IDirectDrawSurface4
 STDMETHODIMP_(ULONG) dbackbuffer_AddRef (THIS)  PURE;
 STDMETHODIMP_(ULONG) dbackbuffer_Release (THIS) PURE;
-STDMETHODIMP dbackbuffer_Blt(THIS_ LPRECT dst_rect, LPDIRECTDRAWSURFACE4 src_surface, LPRECT src_rect, DWORD flags, LPDDBLTFX blt_fx) PURE;
 
 bool ddraw_backbuffer__init(ddraw_backbuffer_t* self, ddraw_iface_t* iface) {
     OBJECT_ZERO_INIT(self);
@@ -37,7 +36,12 @@ bool ddraw_backbuffer__init(ddraw_backbuffer_t* self, ddraw_iface_t* iface) {
     // Overrides
     self->base.vtable.AddRef = dbackbuffer_AddRef;
     self->base.vtable.Release = dbackbuffer_Release;
-    self->base.vtable.Blt = dbackbuffer_Blt;
+
+    pixel_buffer__cleanup(self->base.buffer);
+    SDL_free(self->base.buffer);
+
+    self->base.owns_buffer = false;
+    self->base.buffer = &iface->renderer->screen.buffer;
 
     return true;
 }
@@ -55,12 +59,6 @@ STDMETHODIMP_(ULONG) dbackbuffer_AddRef (THIS)  PURE {
 }
 
 STDMETHODIMP_(ULONG) dbackbuffer_Release (THIS) PURE {
-    LOG_FUNC();
-
-    return DDERR_UNSUPPORTED;
-}
-
-STDMETHODIMP dbackbuffer_Blt(THIS_ LPRECT dst_rect, LPDIRECTDRAWSURFACE4 src_surface, LPRECT src_rect, DWORD flags, LPDDBLTFX blt_fx) PURE {
     LOG_FUNC();
 
     return DDERR_UNSUPPORTED;

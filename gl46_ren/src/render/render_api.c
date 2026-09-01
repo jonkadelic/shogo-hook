@@ -62,7 +62,7 @@ void __cdecl r_DeleteContext(void* pContext) {
 
 void __cdecl r_Clear(DRect_t* pRect, uint32_t flags) {
     LOG_FUNC();
-    glClearColor(28.0 / 255.0, 39.0 / 255.0, 74.0 / 255.0, 1.0f);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
@@ -245,10 +245,12 @@ DBOOL __cdecl r_LockScreen(int32_t left, int32_t top, int32_t right, int32_t bot
         return false;
     }
 
-    size_t width = right - left;
-    *pPitch = r->screen.buffer.width * r->screen.buffer.bpp;
+    auto screen_bpp = color_format__get_bpp(r->screen.buffer.format);
 
-    size_t i = (top * (r->screen.buffer.width * r->screen.buffer.bpp)) + (left * r->screen.buffer.bpp);
+    size_t width = right - left;
+    *pPitch = r->screen.buffer.width * screen_bpp;
+
+    size_t i = (top * (r->screen.buffer.width * screen_bpp)) + (left * screen_bpp);
     *pData = ((uint8_t*) data) + i;
 
     return true;

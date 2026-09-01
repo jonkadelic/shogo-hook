@@ -116,22 +116,59 @@ bool ddraw_surface__init(ddraw_surface_t* self, ddraw_iface_t* iface, LPDDSURFAC
         int w, h;
         if (!SDL_GetWindowSize(iface->renderer->window, &w, &h)) {
             LOG_ERROR("Failed to get window size");
-            return false;
+            goto err;
         }
 
         desc->dwWidth = w;
         desc->dwHeight = h;
         desc->dwHeight |= DDSD_WIDTH | DDSD_HEIGHT;
     }
+    if ((desc->dwFlags & DDSD_PIXELFORMAT) == 0) {
+        desc->ddpfPixelFormat = (typeof(desc->ddpfPixelFormat)) { 
+            .dwFlags = DDPF_RGB,
+            .dwRGBBitCount = 16, // assume 16-bit buffer as Shogo will likely do the same
+        };
+        desc->dwFlags |= DDSD_PIXELFORMAT;
+    }
 
-    self->width = desc->dwWidth;
-    self->height = desc->dwHeight;
+    self->owns_buffer = true;
+    self->buffer = SDL_malloc(sizeof(pixel_buffer_t));
+    if (self->buffer == nullptr) {
+        LOG_ERROR("Failed to alloc buffer for surface");
+        goto err;
+    }
+
+    color_format_t format;
+    if (desc->ddpfPixelFormat.dwRGBBitCount == 32) {
+        format = COLOR_FORMAT__RGBA32;
+    } else if (desc->ddpfPixelFormat.dwRGBBitCount == 16) {
+        format = COLOR_FORMAT__RGB565;
+    } else {
+        LOG_ERROR("Unsupported pixel format");
+        goto err;
+    }
+
+    if (!pixel_buffer__init(self->buffer, desc->dwWidth, desc->dwHeight, format)) {
+        LOG_ERROR("Failed to init surface buffer");
+        goto err;
+    }
+    self->format = desc->ddpfPixelFormat;
 
     return true;
+
+err:
+    ddraw_surface__cleanup(self);
+    return false;
 }
 
 void ddraw_surface__cleanup(ddraw_surface_t* self) {
-    // Do nothing
+    if (self->owns_buffer && self->buffer != nullptr) {
+        pixel_buffer__cleanup(self->buffer);
+
+        SDL_free(self->buffer);
+    }
+
+    self->buffer = nullptr;
 }
 
 #undef INTERFACE
@@ -176,7 +213,48 @@ STDMETHODIMP dsurface_AddOverlayDirtyRect(THIS_ LPRECT) PURE {
 
 STDMETHODIMP dsurface_Blt(THIS_ LPRECT dst_rect, LPDIRECTDRAWSURFACE4 src_surface, LPRECT src_rect, DWORD flags, LPDDBLTFX blt_fx) PURE {
     LOG_FUNC();
-    return DDERR_UNSUPPORTED;
+
+    auto self = (ddraw_surface_t*) This;
+
+    static DWORD supported_flags =
+        DDBLT_COLORFILL;
+
+    if ((flags & ~supported_flags) > 0) {
+        return DDERR_UNSUPPORTED;
+    }
+
+    rect_t r_dst_rect;
+    rect_t* p_dst_rect = nullptr;
+    rect_t r_src_rect;
+    rect_t* p_src_rect = nullptr;
+    
+    if (dst_rect != nullptr) {
+        p_dst_rect = &r_dst_rect;
+        p_dst_rect->x0 = dst_rect->left;
+        p_dst_rect->y0 = dst_rect->top;
+        p_dst_rect->x1 = dst_rect->right;
+        p_dst_rect->y1 = dst_rect->bottom;
+    }
+    if (src_rect != nullptr) {
+        p_src_rect = &r_src_rect;
+        p_src_rect->x0 = src_rect->left;
+        p_src_rect->y0 = src_rect->top;
+        p_src_rect->x1 = src_rect->right;
+        p_src_rect->y1 = src_rect->bottom;
+    }
+
+    if ((flags & DDBLT_COLORFILL) > 0) {
+        pixel_buffer__clear(self->buffer, p_dst_rect, blt_fx->dwFillColor);
+    }
+
+    if (src_surface != nullptr) {
+        ddraw_surface_t* surface = (ddraw_surface_t*) src_surface;
+        if (!pixel_buffer__copy(self->buffer, surface->buffer, p_src_rect, p_dst_rect)) {
+            return DDERR_INVALIDRECT;
+        }
+    }
+
+    return DD_OK;
 }
 
 STDMETHODIMP dsurface_BltBatch(THIS_ LPDDBLTBATCH, DWORD, DWORD ) PURE {
@@ -274,9 +352,41 @@ STDMETHODIMP dsurface_IsLost(THIS) PURE {
     return DDERR_UNSUPPORTED;
 }
 
-STDMETHODIMP dsurface_Lock(THIS_ LPRECT,LPDDSURFACEDESC2,DWORD,HANDLE) PURE {
+STDMETHODIMP dsurface_Lock(THIS_ LPRECT dst_rect, LPDDSURFACEDESC2 desc, DWORD flags, HANDLE unused) PURE {
     LOG_FUNC();
-    return DDERR_UNSUPPORTED;
+
+    auto self = (ddraw_surface_t*) This;
+
+    if (desc == nullptr) {
+        return DDERR_INVALIDPARAMS;
+    }
+
+    int left = 0, top = 0;
+    if (dst_rect != nullptr) {
+        if (dst_rect->left < 0 || dst_rect->top < 0 ||
+            dst_rect->right > self->buffer->width || dst_rect->bottom > self->buffer->height ||
+            dst_rect->left >= dst_rect->right || dst_rect->top >= dst_rect->bottom
+        ) {
+            return DDERR_INVALIDRECT;
+        }
+
+        left = dst_rect->left;
+        top = dst_rect->top;
+    }
+
+    auto bpp = color_format__get_bpp(self->buffer->format);
+
+    uint32_t pitch = self->buffer->width * bpp;
+
+    desc->dwFlags = DDSD_WIDTH | DDSD_HEIGHT | DDSD_PITCH | DDSD_LPSURFACE | DDSD_PIXELFORMAT;
+    desc->dwWidth = self->buffer->width;
+    desc->dwHeight = self->buffer->height;
+    desc->lPitch = pitch;
+    desc->lpSurface = self->buffer->data + (top * pitch) + (left * bpp);
+    desc->ddpfPixelFormat = self->format;
+    desc->ddpfPixelFormat.dwSize = sizeof(desc->ddpfPixelFormat);
+
+    return DD_OK;
 }
 
 STDMETHODIMP dsurface_ReleaseDC(THIS_ HDC) PURE {

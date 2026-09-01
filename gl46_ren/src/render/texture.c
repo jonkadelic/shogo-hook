@@ -5,6 +5,8 @@
 #include "logger.h"
 #include "util/util.h"
 
+static bool setup_gl_texture(texture_t* self, size_t width, size_t height, color_format_t format, GLenum* out_gl_format, GLenum* out_gl_type);
+
 bool texture__init(texture_t* self, char const* opt_name) {
     OBJECT_ZERO_INIT(self);
 
@@ -21,29 +23,57 @@ void texture__cleanup(texture_t* self) {
     self->height = 0;
 }
 
-void texture__upload(texture_t* self, size_t width, size_t height, size_t bpp, void* data) {
-    GLenum internal_format = GL_RGBA8;
-    GLenum format = GL_RGBA;
-    switch (bpp) {
-        case 1: {
-            internal_format = GL_R8;
-            format = GL_RED;
+void texture__upload(texture_t* self, size_t width, size_t height, color_format_t format, void* data) {
+    GLenum gl_format;
+    GLenum gl_type;
+
+    if (!setup_gl_texture(self, width, height, format, &gl_format, &gl_type)) {
+        LOG_ERROR("Failed to set up GL texture");
+        return;
+    }
+    
+    glTextureSubImage2D(self->gl_texture, 0, 0, 0, width, height, gl_format, gl_type, data);
+}
+
+void texture__upload_pixel_buffer(texture_t* self, pixel_buffer_t const* buffer) {
+    GLenum gl_format;
+    GLenum gl_type;
+
+    if (!setup_gl_texture(self, buffer->width, buffer->height, buffer->format, &gl_format, &gl_type)) {
+        LOG_ERROR("Failed to set up GL texture");
+        return;
+    }
+
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, buffer->gl_pixel_buffer);
+    glTextureSubImage2D(self->gl_texture, 0, 0, 0, self->width, self->height, gl_format, gl_type, nullptr);
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);    
+}
+
+void texture__bind(texture_t const* self, size_t texture_unit) {
+    SDL_assert(self->gl_texture != 0);
+
+    glBindTextureUnit(texture_unit, self->gl_texture);
+}
+
+static bool setup_gl_texture(texture_t* self, size_t width, size_t height, color_format_t format, GLenum* out_gl_format, GLenum* out_gl_type) {
+    GLenum gl_internal_format;
+    GLenum gl_format;
+    GLenum gl_type;
+
+    switch (format) {
+        case COLOR_FORMAT__RGBA32: {
+            gl_internal_format = GL_RGBA8;
+            gl_format = GL_RGBA;
+            gl_type = GL_UNSIGNED_BYTE;
         } break;
-        case 2: {
-            internal_format = GL_RG8;
-            format = GL_RG;
-        } break;
-        case 3: {
-            internal_format = GL_RGB8;
-            format = GL_RGB;
-        } break;
-        case 4: {
-            internal_format = GL_RGBA8;
-            format = GL_RGBA;
+        case COLOR_FORMAT__RGB565: {
+            gl_internal_format = GL_RGB565;
+            gl_format = GL_RGB;
+            gl_type = GL_UNSIGNED_SHORT_5_6_5;
         } break;
         default: {
-            LOG_WARNING("Attempted to upload to texture using invalid BPP %zu", bpp);
-            return;
+            LOG_WARNING("Attempted to upload to texture using invalid format %zu", (size_t) format);
+            return false;
         }
     }
 
@@ -52,7 +82,7 @@ void texture__upload(texture_t* self, size_t width, size_t height, size_t bpp, v
         glCreateTextures(GL_TEXTURE_2D, 1, &new_texture);
         if (new_texture == 0) {
             LOG_ERROR("Failed to recreate texture");
-            return;
+            return false;
         }
 
         if (self->opt_name != nullptr) {
@@ -67,20 +97,12 @@ void texture__upload(texture_t* self, size_t width, size_t height, size_t bpp, v
         glDeleteTextures(1, &self->gl_texture);
         self->gl_texture = new_texture;
 
-        glTextureStorage2D(new_texture, 1, internal_format, width, height);
+        glTextureStorage2D(new_texture, 1, gl_internal_format, width, height);
         self->width = width;
         self->height = height;
     }
 
-    glTextureSubImage2D(self->gl_texture, 0, 0, 0, width, height, format, GL_UNSIGNED_BYTE, data);
-}
-
-void texture__upload_rect_buffer(texture_t* self, rect_buffer_t const* buffer) {
-    texture__upload(self, buffer->width, buffer->height, buffer->bpp, buffer->data);
-}
-
-void texture__bind(texture_t const* self, size_t texture_unit) {
-    SDL_assert(self->gl_texture != 0);
-
-    glBindTextureUnit(texture_unit, self->gl_texture);
+    *out_gl_format = gl_format;
+    *out_gl_type = gl_type;
+    return true;
 }

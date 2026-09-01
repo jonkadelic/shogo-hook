@@ -1,11 +1,13 @@
 #include "./surfaces.h"
-#include "logger.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include <SDL3/SDL.h>
+
+#include "logger.h"
+#include "util/util.h"
 
 #define SURFACE_ALLOC_NUM (4)
 
@@ -77,7 +79,7 @@ surface_t* surface_manager__create_surface(surface_manager_t* self, int32_t widt
         goto err;
     }
 
-    if (!rect_buffer__init(&(*surface)->buffer, width, height, 2)) {
+    if (!pixel_buffer__init(&(*surface)->buffer, width, height, COLOR_FORMAT__RGBA32)) {
         LOG_ERROR("Failed to create surface buffer");
         goto err;
     }
@@ -86,7 +88,7 @@ surface_t* surface_manager__create_surface(surface_manager_t* self, int32_t widt
 
 err:
     if (*surface != nullptr) {
-        rect_buffer__cleanup(&(*surface)->buffer);
+        pixel_buffer__cleanup(&(*surface)->buffer);
         texture__cleanup(&(*surface)->texture);
     }
     SDL_free(*surface);
@@ -99,7 +101,7 @@ void surface_manager__delete_surface(surface_manager_t* self, size_t idx) {
     auto surface = self->surfaces[idx];
     if (surface == nullptr) return;
 
-    rect_buffer__cleanup(&surface->buffer);
+    pixel_buffer__cleanup(&surface->buffer);
     texture__cleanup(&surface->texture);
     SDL_free(self->surfaces[idx]);
     self->surfaces[idx] = nullptr;
@@ -126,21 +128,17 @@ void surface__update_texture(surface_t* self, bool transparency, uint16_t transp
         for (size_t x = 0; x < self->width; x++) {
             size_t i = (y * self->width) + x;
 
-            uint8_t red = (extern_data[i] & 0xF800) >> 11;
-            uint8_t green = (extern_data[i] & 0x07E0) >> 6;
-            uint8_t blue = (extern_data[i] & 0x001F) >> 0;
-
             if (transparency && extern_data[i] == transparent_color) {
                 buffer[i] = 0x00000000;
             } else {
-                buffer[i] = 0xFF000000 |
-                            (red << 3) |
-                            ((green << 3) << 8) |
-                            ((blue << 3) << 16);
+                uint16_t red, green, blue;
+                EXTRACT_RGB565(extern_data[i], &red, &green, &blue);
+
+                buffer[i] = RGB565_TO_RGBA8888(red, green, blue, 0xFF);
             }
         }
 
-        texture__upload(&self->texture, self->width, self->height, 4, buffer);
+        texture__upload(&self->texture, self->width, self->height, COLOR_FORMAT__RGBA32, buffer);
     }
 
     SDL_free(buffer);

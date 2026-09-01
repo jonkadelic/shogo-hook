@@ -105,7 +105,7 @@ static shared_texture_t* create_texture(shared_texture_manager_t* self, TextureD
         tbuf[i] = argb;
     }
 
-    texture__upload(&out->texture, texture_data->m_Width, texture_data->m_Height, 4, tbuf);
+    texture__upload(&out->texture, texture_data->m_Width, texture_data->m_Height, COLOR_FORMAT__RGBA32, tbuf);
     SDL_free(tbuf); tbuf = nullptr;
 
     // Sort textures
