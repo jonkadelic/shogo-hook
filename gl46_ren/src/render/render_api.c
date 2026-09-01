@@ -51,13 +51,23 @@ DBOOL __cdecl r_SetMasterPalette(SharedTexture_t* pPalette) {
     return true;
 }
 
-void* __cdecl r_CreateContext(void* pInit) {
+RenderContext_t* __cdecl r_CreateContext(RenderContextInit_t* pInit) {
     LOG_FUNC();
-    return nullptr;
+
+    RenderContext_t* ctx = SDL_calloc(1, sizeof(RenderContext_t));
+    if (ctx == nullptr) {
+        return nullptr;
+    }
+
+    ctx->m_CurFrameCode = 0xffff;
+    
+    return ctx;
 }
 
-void __cdecl r_DeleteContext(void* pContext) {
+void __cdecl r_DeleteContext(RenderContext_t* pContext) {
     LOG_FUNC();
+
+    SDL_free(pContext);
 }
 
 void __cdecl r_Clear(DRect_t* pRect, uint32_t flags) {
@@ -103,7 +113,7 @@ uint32_t __cdecl r_RenderScene(SceneDesc_t* pSceneDesc) {
     renderer__set_camera(pSceneDesc->m_Pos, pSceneDesc->m_Rotation, pSceneDesc->m_yFov, aspect);
 
     if (pSceneDesc->m_DrawMode == SceneDrawMode_Normal) {
-
+        LOG_INFO("Normal scene draw!");
     } else if (pSceneDesc->m_DrawMode == SceneDrawMode_ObjectList) {
         for (size_t i = 0; i < pSceneDesc->m_nObjectListSize; i++) {
             renderer__draw_object(pSceneDesc->m_pObjectList[i]);

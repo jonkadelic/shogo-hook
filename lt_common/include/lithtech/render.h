@@ -8,6 +8,21 @@
 #include "./scene.h"
 #include "./blit_request.h"
 
+typedef struct RenderContextInit {
+    uint32_t unk_00;
+    // more fields, probably
+} RenderContextInit_t;
+
+typedef struct RenderContext {
+    uint32_t unk_00[2];
+    void* m_pMainWorld;
+    uint16_t m_CurFrameCode;
+    uint16_t unk_0e;
+} RenderContext_t;
+static_assert(sizeof(RenderContext_t) == 0x10);
+static_assert(offsetof(RenderContext_t, m_pMainWorld) == 0x08);
+static_assert(offsetof(RenderContext_t, m_CurFrameCode) == 0x0c);
+
 typedef struct RMode {
     bool m_bHardware;
     char m_RenderDLL[200];
@@ -64,8 +79,8 @@ typedef struct RenderStruct {
     void (*__cdecl UnbindTexture)(SharedTexture_t* pTex);
     DBOOL (*__cdecl QueryDeletePalette)(void* pPalette);
     DBOOL (*__cdecl SetMasterPalette)(SharedTexture_t* pPalette);
-    void* (*__cdecl CreateContext)(void* pInit);
-    void (*__cdecl DeleteContext)(void* pContext);
+    RenderContext_t* (*__cdecl CreateContext)(RenderContextInit_t* pInit);
+    void (*__cdecl DeleteContext)(RenderContext_t* pContext);
     void (*__cdecl Clear)(DRect_t* pRect, uint32_t flags);
     DBOOL (*__cdecl Start3D)(void);
     DBOOL (*__cdecl End3D)(void);
