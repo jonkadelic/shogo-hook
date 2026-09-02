@@ -12,6 +12,9 @@
 #include "render/render_api.h"
 #include "shaders/shaders.h"
 
+#define TARGET_FPS (60)
+#define TARGET_FRAME_TIME_NS (TARGET_FPS > 0 ? (SDL_NS_PER_SECOND / TARGET_FPS) : 0)
+
 static renderer_t RENDERER = { 0 };
 
 static void __stdcall gl_debug_log(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, GLchar const* message, void const* user_param);
@@ -43,6 +46,8 @@ bool renderer__init(RMode_t const* rmode, void* hwnd) {
         if (!SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true)) {
             goto err;
         }
+
+        SDL_SetHint(SDL_HINT_WINDOWS_ENABLE_MESSAGELOOP, "0");
     
         RENDERER.window = SDL_CreateWindowWithProperties(props);
         // RENDERER.window = SDL_CreateWindow("Debug Window", 640, 480, SDL_WINDOW_OPENGL);
@@ -242,7 +247,17 @@ void renderer__swap_buffers(void) {
         return;
     }
 
+    if (TARGET_FRAME_TIME_NS > 0) {
+        uint64_t now = SDL_GetTicksNS();
+        uint64_t elapsed = now - RENDERER.last_swap;
+        if (RENDERER.last_swap != 0 && elapsed < TARGET_FRAME_TIME_NS) {
+            SDL_DelayNS(TARGET_FRAME_TIME_NS - elapsed);
+        }
+    }
+
     SDL_GL_SwapWindow(RENDERER.window);
+
+    RENDERER.last_swap = SDL_GetTicksNS();
 }
 
 void renderer__draw_object(DObject_t const* object) {

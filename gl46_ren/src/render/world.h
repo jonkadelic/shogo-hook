@@ -15,16 +15,20 @@ typedef struct world_model {
 } world_model_t;
 
 typedef struct world {
+    MainWorld_t const* world;
+    tessellator_t* tessellator;
+    shared_texture_manager_t* textures;
+
     size_t models_len;
     world_model_t* models;
 } world_t;
 
 bool world__init(
     world_t* self,
-    MainWorld_t const* main_world,
+    SceneDesc_t const* scene,
     tessellator_t* tessellator,
     shared_texture_manager_t* textures
 );
 void world__cleanup(world_t* self);
 
-void world__draw(world_t* self);
+void world__draw(world_t* self, SceneDesc_t const* scene);

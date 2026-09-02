@@ -24,6 +24,7 @@ typedef struct renderer {
     SDL_Window* window;
     SDL_GLContext gl_context;
     uint64_t last_swap;
+    float yfov_mod;
 
     rsurface_manager_t rsurfaces;
     tessellator_t tessellator;
@@ -35,6 +36,7 @@ typedef struct renderer {
     screen_t screen;
     RenderContext_t* render_context;
     world_t* world;
+    
 
     struct {
         DVector_t pos;

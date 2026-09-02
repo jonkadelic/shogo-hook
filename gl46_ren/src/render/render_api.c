@@ -12,6 +12,9 @@ uint32_t __cdecl r_Init(RenderStructInit_t* pInit) {
         return 1;
     }
 
+    auto r = renderer__get_instance();
+    SDL_SetWindowMouseGrab(r->window, true);
+
     return 0;
 }
 
@@ -22,6 +25,9 @@ void __cdecl r_Term(void) {
     call_stats__clear();
 
     renderer__reset();
+
+    auto r = renderer__get_instance();
+    SDL_SetWindowMouseGrab(r->window, false);
 }
 
 void __cdecl r_SetSoftSky(SharedTexture_t** ppTex) {
@@ -125,7 +131,7 @@ uint32_t __cdecl r_RenderScene(SceneDesc_t* pSceneDesc) {
     }
 
     float aspect = (float) (pSceneDesc->m_Rect.right - pSceneDesc->m_Rect.left) / (float) (pSceneDesc->m_Rect.bottom - pSceneDesc->m_Rect.top);
-    renderer__set_camera(pSceneDesc->m_Pos, pSceneDesc->m_Rotation, pSceneDesc->m_yFov, aspect);
+    renderer__set_camera(pSceneDesc->m_Pos, pSceneDesc->m_Rotation, pSceneDesc->m_yFov + r->yfov_mod, aspect);
 
     if (pSceneDesc->m_hRenderContext != nullptr && pSceneDesc->m_hRenderContext->m_pMainWorld != nullptr) {
         if (r->world == nullptr) {
@@ -135,7 +141,7 @@ uint32_t __cdecl r_RenderScene(SceneDesc_t* pSceneDesc) {
                 return 0;
             }
 
-            if (!world__init(r->world, pSceneDesc->m_hRenderContext->m_pMainWorld, &r->tessellator, &r->shared_textures)) {
+            if (!world__init(r->world, pSceneDesc, &r->tessellator, &r->shared_textures)) {
                 LOG_ERROR("Failed to init world");
                 return 0;
             }
@@ -143,7 +149,7 @@ uint32_t __cdecl r_RenderScene(SceneDesc_t* pSceneDesc) {
     }
 
     if (pSceneDesc->m_DrawMode == SceneDrawMode_Normal) {
-        world__draw(r->world);
+        world__draw(r->world, pSceneDesc);
     } else if (pSceneDesc->m_DrawMode == SceneDrawMode_ObjectList) {
         for (size_t i = 0; i < pSceneDesc->m_nObjectListSize; i++) {
             renderer__draw_object(pSceneDesc->m_pObjectList[i]);
@@ -177,7 +183,15 @@ void __cdecl r_SwapBuffers(void) {
     screen__draw(&r->screen);
     screen__clear(&r->screen);
 
+    SDL_Event event;
+    while (SDL_PollEvent(&event)) {
+        if (event.type == SDL_EVENT_TERMINATING) {
+            PostQuitMessage(0);
+        }
+    }
+
     renderer__swap_buffers();
+    SDL_SetWindowMouseGrab(r->window, true);
 }
 
 uint32_t __cdecl r_GetInfoFlags(void) {
