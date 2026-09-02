@@ -395,6 +395,7 @@ static bool init_display(RMode_t const* rmode) {
         if (!SDL_SetWindowFullscreen(RENDERER.window, false)) {
             goto err;
         }
+        SDL_SetWindowPosition(RENDERER.window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
     } else {
         int num_display_modes = 0;
 

@@ -177,6 +177,9 @@ static bool build_world_model(
         if (poly->m_pSurface->m_iTexture != index) {
             continue;
         }
+        if ((poly->m_pSurface->m_SurfaceFlags & (SurfaceFlags_NonExistent | SurfaceFlags_Invisible | SurfaceFlags_Sky)) > 0) {
+            continue;
+        }
 
         if (poly->m_nVertices < 3) {
             LOG_WARNING("Weird polygon with < 3 vertices");

@@ -12,9 +12,6 @@ uint32_t __cdecl r_Init(RenderStructInit_t* pInit) {
         return 1;
     }
 
-    auto r = renderer__get_instance();
-    SDL_SetWindowMouseGrab(r->window, true);
-
     return 0;
 }
 
@@ -28,6 +25,7 @@ void __cdecl r_Term(void) {
 
     auto r = renderer__get_instance();
     SDL_SetWindowMouseGrab(r->window, false);
+    SDL_ShowCursor();
 }
 
 void __cdecl r_SetSoftSky(SharedTexture_t** ppTex) {
@@ -192,6 +190,7 @@ void __cdecl r_SwapBuffers(void) {
 
     renderer__swap_buffers();
     SDL_SetWindowMouseGrab(r->window, true);
+    SDL_HideCursor();
 }
 
 uint32_t __cdecl r_GetInfoFlags(void) {
