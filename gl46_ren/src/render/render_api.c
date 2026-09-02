@@ -54,20 +54,26 @@ DBOOL __cdecl r_SetMasterPalette(SharedTexture_t* pPalette) {
 RenderContext_t* __cdecl r_CreateContext(RenderContextInit_t* pInit) {
     LOG_FUNC();
 
-    RenderContext_t* ctx = SDL_calloc(1, sizeof(RenderContext_t));
-    if (ctx == nullptr) {
+    auto r = renderer__get_instance();
+
+    r->render_context = SDL_calloc(1, sizeof(RenderContext_t));
+    if (r->render_context == nullptr) {
         return nullptr;
     }
 
-    ctx->m_CurFrameCode = 0xffff;
+    r->render_context->m_pMainWorld = pInit->m_pMainWorld;
+    r->render_context->m_CurFrameCode = 0xffff;
     
-    return ctx;
+    return r->render_context;
 }
 
 void __cdecl r_DeleteContext(RenderContext_t* pContext) {
     LOG_FUNC();
 
-    SDL_free(pContext);
+    auto r = renderer__get_instance();
+
+    SDL_free(r->render_context);
+    r->render_context = nullptr;
 }
 
 void __cdecl r_Clear(DRect_t* pRect, uint32_t flags) {
@@ -109,11 +115,35 @@ DBOOL __cdecl r_IsInOptimized2D(void) {
 uint32_t __cdecl r_RenderScene(SceneDesc_t* pSceneDesc) {
     LOG_FUNC();
 
+    auto r = renderer__get_instance();
+    if (!r->in_3d) {
+        return 0;
+    }
+    if (r->in_2d) {
+        LOG_WARNING("Tried to render 3D while in 2D mode");
+        return 0;
+    }
+
     float aspect = (float) (pSceneDesc->m_Rect.right - pSceneDesc->m_Rect.left) / (float) (pSceneDesc->m_Rect.bottom - pSceneDesc->m_Rect.top);
     renderer__set_camera(pSceneDesc->m_Pos, pSceneDesc->m_Rotation, pSceneDesc->m_yFov, aspect);
 
+    if (pSceneDesc->m_hRenderContext != nullptr && pSceneDesc->m_hRenderContext->m_pMainWorld != nullptr) {
+        if (r->world == nullptr) {
+            r->world = SDL_malloc(sizeof(world_t));
+            if (r->world == nullptr) {
+                LOG_ERROR("Failed to alloc world");
+                return 0;
+            }
+
+            if (!world__init(r->world, pSceneDesc->m_hRenderContext->m_pMainWorld, &r->tessellator, &r->shared_textures)) {
+                LOG_ERROR("Failed to init world");
+                return 0;
+            }
+        }
+    }
+
     if (pSceneDesc->m_DrawMode == SceneDrawMode_Normal) {
-        LOG_INFO("Normal scene draw!");
+        world__draw(r->world);
     } else if (pSceneDesc->m_DrawMode == SceneDrawMode_ObjectList) {
         for (size_t i = 0; i < pSceneDesc->m_nObjectListSize; i++) {
             renderer__draw_object(pSceneDesc->m_pObjectList[i]);
@@ -163,12 +193,12 @@ uint32_t __cdecl r_GetBufferFormat(void) {
 void* __cdecl r_CreateSurface(int32_t width, int32_t height) {
     LOG_FUNC();
 
-    auto surfaces = renderer__get_surfaces();
-    if (surfaces == nullptr) {
+    auto rsurfaces = renderer__get_rsurfaces();
+    if (rsurfaces == nullptr) {
         return nullptr;
     }
 
-    return surface_manager__create_surface(surfaces, width, height);
+    return rsurface_manager__create_rsurface(rsurfaces, width, height);
 }
 
 void __cdecl r_DeleteSurface(void* pSurface) {
@@ -178,13 +208,13 @@ void __cdecl r_DeleteSurface(void* pSurface) {
         return;
     }
 
-    auto surface = (surface_t*) pSurface;
-    auto surfaces = renderer__get_surfaces();
-    if (surfaces == nullptr) {
+    auto rsurface = (rsurface_t*) pSurface;
+    auto rsurfaces = renderer__get_rsurfaces();
+    if (rsurfaces == nullptr) {
         return;
     }
 
-    surface_manager__delete_surface(surfaces, surface->idx);
+    rsurface_manager__delete_rsurface(rsurfaces, rsurface->idx);
 }
 
 void __cdecl r_GetSurfaceInfo(void* pSurface, int32_t* pWidth, int32_t* pHeight, int32_t* pPitchBytes) {
@@ -194,16 +224,16 @@ void __cdecl r_GetSurfaceInfo(void* pSurface, int32_t* pWidth, int32_t* pHeight,
         return;
     }
 
-    auto surface = (surface_t*) pSurface;
+    auto rsurface = (rsurface_t*) pSurface;
 
     if (pWidth != nullptr) {
-        *pWidth = surface->width;
+        *pWidth = rsurface->width;
     }
     if (pHeight != nullptr) {
-        *pHeight = surface->height;
+        *pHeight = rsurface->height;
     }
     if (pPitchBytes != nullptr) {
-        *pPitchBytes = surface->width * sizeof(uint16_t);
+        *pPitchBytes = rsurface->width * sizeof(uint16_t);
     }
 }
 
@@ -214,13 +244,13 @@ void* __cdecl r_LockSurface(void* pSurface) {
         return nullptr;
     }
 
-    auto surface = (surface_t*) pSurface;
-    if (surface->locked) {
+    auto rsurface = (rsurface_t*) pSurface;
+    if (rsurface->locked) {
         return nullptr;
     }
 
-    surface->locked = true;
-    return surface->buffer.pixel_data;
+    rsurface->locked = true;
+    return rsurface->buffer.pixel_data;
 }
 
 void __cdecl r_UnlockSurface(void* pSurface) {
@@ -230,8 +260,8 @@ void __cdecl r_UnlockSurface(void* pSurface) {
         return;
     }
 
-    auto surface = (surface_t*) pSurface;
-    surface->locked = false;
+    auto rsurface = (rsurface_t*) pSurface;
+    rsurface->locked = false;
 }
 
 DBOOL __cdecl r_OptimizeSurface(void* pSurface, uint32_t transparentColor) {

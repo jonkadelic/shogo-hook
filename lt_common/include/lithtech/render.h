@@ -5,17 +5,19 @@
 #include "./common.h"
 #include "./texture.h"
 #include "./shapes.h"
-#include "./scene.h"
 #include "./blit_request.h"
+#include "./world.h"
+
+typedef struct SceneDesc SceneDesc_t;
 
 typedef struct RenderContextInit {
-    uint32_t unk_00;
+    MainWorld_t* m_pMainWorld;
     // more fields, probably
 } RenderContextInit_t;
 
 typedef struct RenderContext {
     uint32_t unk_00[2];
-    void* m_pMainWorld;
+    MainWorld_t* m_pMainWorld;
     uint16_t m_CurFrameCode;
     uint16_t unk_0e;
 } RenderContext_t;

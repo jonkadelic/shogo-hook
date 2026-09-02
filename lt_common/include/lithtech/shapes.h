@@ -22,6 +22,15 @@ static_assert(offsetof(DVector_t, x) == 0x00);
 static_assert(offsetof(DVector_t, y) == 0x04);
 static_assert(offsetof(DVector_t, z) == 0x08);
 
+typedef struct DVertex {
+    float x, y, z, w;
+} DVertex_t;
+static_assert(sizeof(DVertex_t) == 0x10);
+static_assert(offsetof(DVertex_t, x) == 0x00);
+static_assert(offsetof(DVertex_t, y) == 0x04);
+static_assert(offsetof(DVertex_t, z) == 0x08);
+static_assert(offsetof(DVertex_t, w) == 0x0c);
+
 typedef struct DRotation {
     DVector_t m_Vec;
     float m_Spin;

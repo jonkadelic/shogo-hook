@@ -52,7 +52,7 @@ void tessellator__append_index(tessellator_t* self, index_t index) {
 void tessellator__append_indices(tessellator_t* self, size_t num_indices, index_t const indices[static num_indices]) {
     // Ensure buffer is large enough to fit new indices
     size_t index_index = self->indices_len;
-    if (self->indices_len == self->indices_capacity) {
+    if (self->indices_len < self->indices_len + num_indices) {
         size_t new_indices_capacity = self->indices_capacity + SDL_max(INDEX_ALLOC_LEN, num_indices);
         index_t* new_indices = SDL_realloc(self->indices, sizeof(index_t) * new_indices_capacity);
         if (new_indices == nullptr) {

@@ -3,6 +3,7 @@
 #include "./common.h"
 #include "./shapes.h"
 #include "./object.h"
+#include "./render.h"
 
 typedef struct SkyDef {
     DVector_t m_Min;
@@ -31,12 +32,12 @@ typedef struct SceneDesc {
     void* unk_18;
     DVector_t m_GlobalModelLightAdd;
     DVector_t m_GlobalModelLightScale;
-    void* m_hRenderContext;
+    RenderContext_t* m_hRenderContext;
     DVector_t m_GlobalLightColor;
     DVector_t m_GlobalLightAdd;
     DVector_t m_GlobalLightScale;
     DVector_t unk_5c;
-    float unk_68;
+    float m_FrameTime;
     uint32_t m_CurObjectFrameCode;
     SkyDef_t m_SkyDef;
     DObject_t** m_pSkyObjects;

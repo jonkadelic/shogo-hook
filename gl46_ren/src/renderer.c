@@ -87,7 +87,7 @@ bool renderer__init(RMode_t const* rmode, void* hwnd) {
     glViewport(0, 0, rmode->m_Width, rmode->m_Height);
 
     // Init surfaces
-    if (!surface_manager__init(&RENDERER.surfaces)) {
+    if (!rsurface_manager__init(&RENDERER.rsurfaces)) {
         LOG_FATAL("Failed to init surface manager");
         goto err;
     }
@@ -107,7 +107,7 @@ bool renderer__init(RMode_t const* rmode, void* hwnd) {
     }
 
     // Init blitter
-    if (!blitter__init(&RENDERER.blitter, rmode->m_Width, rmode->m_Height, &RENDERER.surfaces, &RENDERER.shaders[SHADER_ID__BLIT_2D], &RENDERER.tessellator)) {
+    if (!blitter__init(&RENDERER.blitter, rmode->m_Width, rmode->m_Height, &RENDERER.rsurfaces, &RENDERER.shaders[SHADER_ID__BLIT_2D], &RENDERER.tessellator)) {
         LOG_FATAL("Failed to init blitter");
         goto err;
     }
@@ -173,6 +173,12 @@ void renderer__cleanup(void) {
 }
 
 void renderer__reset(void) {
+    if (RENDERER.world != nullptr) {
+        world__cleanup(RENDERER.world);
+        SDL_free(RENDERER.world);
+        RENDERER.world = nullptr;
+    }
+
     shared_texture_manager__cleanup(&RENDERER.shared_textures);
 
     object_manager__cleanup(&RENDERER.objects);
@@ -184,7 +190,7 @@ void renderer__reset(void) {
     }
 
     tessellator__cleanup(&RENDERER.tessellator);
-    surface_manager__cleanup(&RENDERER.surfaces);
+    rsurface_manager__cleanup(&RENDERER.rsurfaces);
 }
 
 bool renderer__start_3d(void) {
@@ -260,13 +266,13 @@ HMM_Mat4 renderer__get_view_projection_matrix(void) {
     );
     // Camera world matrix inverts to the view matrix since it's a rigid transform
     HMM_Mat4 view_matrix = HMM_InvGeneralM4(camera_matrix);
-    HMM_Mat4 projection_matrix = HMM_Perspective_RH_NO(RENDERER.camera.fov_y, RENDERER.camera.aspect, 1.0f, 50000.0f);
+    HMM_Mat4 projection_matrix = HMM_Perspective_LH_NO(RENDERER.camera.fov_y, RENDERER.camera.aspect, 1.0f, 50000.0f);
 
     return HMM_MulM4(projection_matrix, view_matrix);
 }
 
-surface_manager_t* renderer__get_surfaces(void) {
-    return &RENDERER.surfaces;
+rsurface_manager_t* renderer__get_rsurfaces(void) {
+    return &RENDERER.rsurfaces;
 }
 
 tessellator_t* renderer__get_tessellator(void) {

@@ -11,7 +11,7 @@ typedef struct shared_texture {
 
 typedef struct shared_texture_manager {
     size_t textures_len, textures_capacity;
-    shared_texture_t* textures;
+    shared_texture_t** textures;
 } shared_texture_manager_t;
 
 bool shared_texture_manager__init(shared_texture_manager_t* self);

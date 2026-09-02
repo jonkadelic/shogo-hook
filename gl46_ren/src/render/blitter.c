@@ -3,10 +3,10 @@
 #include "util/util.h"
 #include "logger.h"
 
-bool blitter__init(blitter_t* self, size_t width, size_t height, surface_manager_t* surfaces, shader_t const* shader, tessellator_t* tessellator) {
+bool blitter__init(blitter_t* self, size_t width, size_t height, rsurface_manager_t* rsurfaces, shader_t const* shader, tessellator_t* tessellator) {
     OBJECT_ZERO_INIT(self);
 
-    self->surfaces = surfaces;
+    self->rsurfaces = rsurfaces;
     self->shader = shader;
 
     if (!mesh__init(&self->mesh)) {
@@ -66,10 +66,10 @@ void blitter__blit_request(blitter_t* self, BlitRequest_t const* request) {
         return;
     }
 
-    surface_t* surface = request->m_pSurface;
+    rsurface_t* rsurface = request->m_pSurface;
     DRect_t const* dest = request->m_pDestRect;
 
-    surface__update_texture(surface,
+    rsurface__update_texture(rsurface,
         (request->m_BlitOptions & BlitRequestOptions_Transparent) != 0,
         request->m_TransparentColor
     );
@@ -80,7 +80,7 @@ void blitter__blit_request(blitter_t* self, BlitRequest_t const* request) {
     }
 
     shader__bind(self->shader);
-    shader__set_uniform_texture(self->shader, "u_texture", &surface->texture);
+    shader__set_uniform_texture(self->shader, "u_texture", &rsurface->texture);
 
     auto model_matrix = HMM_Mul(
         HMM_Translate((HMM_Vec3) { dest->left, dest->top, 0.0f }),

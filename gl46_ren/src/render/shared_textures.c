@@ -11,9 +11,6 @@
 
 #define TEXTURE_ALLOC_SIZE (4)
 
-// path_hash must be first member for `compare_textures_by_hash` to work
-static_assert(offsetof(shared_texture_t, path_hash) == 0);
-
 static int compare_textures_by_hash(void const* a, void const* b);
 
 static shared_texture_t* create_texture(shared_texture_manager_t* self, TextureData_t const* texture_data, uint64_t path_hash);
@@ -26,7 +23,8 @@ bool shared_texture_manager__init(shared_texture_manager_t* self) {
 
 void shared_texture_manager__cleanup(shared_texture_manager_t* self) {
     for (size_t i = 0; i < self->textures_len; i++) {
-        texture__cleanup(&self->textures[i].texture);
+        texture__cleanup(&self->textures[i]->texture);
+        SDL_free(self->textures[i]);
     }
 
     SDL_free(self->textures);
@@ -39,7 +37,9 @@ texture_t* shared_texture_manager__get_texture(shared_texture_manager_t* self, S
     }
 
     uint64_t path_hash = hash__fnv1a_64(FNV1_64A_INIT, strlen(lt_texture->m_pFile->m_Filename), lt_texture->m_pFile->m_Filename);
-    shared_texture_t* texture = SDL_bsearch(&path_hash, self->textures, self->textures_len, sizeof(shared_texture_t), compare_textures_by_hash);
+    uint64_t const* path_hash_ptr = &path_hash;
+    shared_texture_t** texture_ptr = SDL_bsearch(&path_hash_ptr, self->textures, self->textures_len, sizeof(shared_texture_t*), compare_textures_by_hash);
+    shared_texture_t* texture = texture_ptr != nullptr ? *texture_ptr : nullptr;
     if (texture == nullptr) {
         auto texture_data = RENDER_STRUCT->GetTexture(lt_texture, 0);
         if (texture_data == nullptr) {
@@ -60,10 +60,12 @@ texture_t* shared_texture_manager__get_texture(shared_texture_manager_t* self, S
 }
 
 static int compare_textures_by_hash(void const* a, void const* b) {
-    uint64_t const* hash_a = a;
-    uint64_t const* hash_b = b;
+    uint64_t const* const* hash_a = a;
+    shared_texture_t const* const* texture_b = b;
 
-    return (*hash_a > *hash_b) - (*hash_a < *hash_b);
+    uint64_t hash_b = (*texture_b)->path_hash;
+
+    return (**hash_a > hash_b) - (**hash_a < hash_b);
 }
 
 static shared_texture_t* create_texture(shared_texture_manager_t* self, TextureData_t const* texture_data, uint64_t path_hash) {
@@ -74,7 +76,7 @@ static shared_texture_t* create_texture(shared_texture_manager_t* self, TextureD
     size_t texture_index = self->textures_len;
     if (self->textures_len + 1 > self->textures_capacity) {
         size_t new_textures_capacity = self->textures_capacity + TEXTURE_ALLOC_SIZE;
-        shared_texture_t* new_textures = SDL_realloc(self->textures, sizeof(shared_texture_t) * new_textures_capacity);
+        shared_texture_t** new_textures = SDL_realloc(self->textures, sizeof(shared_texture_t*) * new_textures_capacity);
         if (new_textures == nullptr) {
             LOG_ERROR("Failed to allocate %zu shared textures", new_textures_capacity);
             goto err;
@@ -84,7 +86,12 @@ static shared_texture_t* create_texture(shared_texture_manager_t* self, TextureD
         self->textures = new_textures;
     }
 
-    out = &self->textures[texture_index];
+    out = SDL_calloc(1, sizeof(shared_texture_t));
+    if (out == nullptr) {
+        LOG_ERROR("Failed to allocate shared texture");
+        goto err;
+    }
+    self->textures[texture_index] = out;
 
     out->path_hash = path_hash;
 
@@ -108,28 +115,30 @@ static shared_texture_t* create_texture(shared_texture_manager_t* self, TextureD
     texture__upload(&out->texture, texture_data->m_Width, texture_data->m_Height, COLOR_FORMAT__RGBA32, tbuf);
     SDL_free(tbuf); tbuf = nullptr;
 
+    self->textures_len++;
+
     // Sort textures
     SDL_qsort(
         self->textures,
         self->textures_len,
-        sizeof(shared_texture_t),
+        sizeof(shared_texture_t*),
         compare_textures_by_hash
     );
 
+    uint64_t const* path_hash_ptr = &path_hash;
     // Get texture back
-    out = SDL_bsearch(
-        &path_hash,
+    shared_texture_t** out_ptr = SDL_bsearch(
+        &path_hash_ptr,
         self->textures,
         self->textures_len,
-        sizeof(shared_texture_t),
+        sizeof(shared_texture_t*),
         compare_textures_by_hash
     );
 
-    self->textures_len++;
-
-    return out;
+    return out_ptr != nullptr ? *out_ptr : nullptr;
 
 err:
     SDL_free(tbuf);
+    SDL_free(out);
     return nullptr;
 }

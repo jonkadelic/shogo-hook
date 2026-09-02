@@ -28,7 +28,7 @@ shader_def_t const SHADER_DEFS[] = {
         }
     },
     [SHADER_ID__SCREEN] = (shader_def_t) {
-        .name = "polygrid",
+        .name = "screen",
         .shader_srcs = {
             [SHADER_SRC_TYPE__VERTEX] = (char const[]) {
                 #embed "screen.vert"
@@ -36,6 +36,19 @@ shader_def_t const SHADER_DEFS[] = {
             },
             [SHADER_SRC_TYPE__FRAGMENT] = (char const[]) {
                 #embed "screen.frag"
+                , '\0'
+            }
+        }
+    },
+    [SHADER_ID__WORLD] = (shader_def_t) {
+        .name = "world",
+        .shader_srcs = {
+            [SHADER_SRC_TYPE__VERTEX] = (char const[]) {
+                #embed "world.vert"
+                , '\0'
+            },
+            [SHADER_SRC_TYPE__FRAGMENT] = (char const[]) {
+                #embed "world.frag"
                 , '\0'
             }
         }

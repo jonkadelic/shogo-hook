@@ -13,6 +13,7 @@ extern "C" {
 #include "./shapes.h"
 #include "./sprite.h"
 #include "./texture.h"
+#include "./world.h"
 
 #ifdef __cplusplus
 }

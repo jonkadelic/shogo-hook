@@ -103,7 +103,7 @@ void polygrid__draw(object_data_t* self, tessellator_t* tessellator, DObject_t c
     );
     model_matrix = HMM_MulM4(
         model_matrix,
-        HMM_Translate(HMM_V3((polygrid->m_Width - 1) * -0.5f, 0.0f, (polygrid->m_Height - 1) * -0.5f))
+        HMM_Translate(HMM_V3((polygrid->m_Width - 1) * 0.5f, 0.0f, (polygrid->m_Height - 1) * -0.5f))
     );
 
     // Bind shader
