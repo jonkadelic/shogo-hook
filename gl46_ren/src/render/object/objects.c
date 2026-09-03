@@ -13,8 +13,8 @@
 
 #define OBJECT_DATA_ALLOC_LEN   (4)
 
-// object must be first member for `compare_object_ptrs_by_id` to work
-static_assert(offsetof(object_data_t, object) == 0);
+// object_id must be first member for `compare_object_ptrs_by_id` to work
+static_assert(offsetof(object_data_t, object_id) == 0);
 
 static int compare_object_ptrs_by_id(void const* a, void const* b);
 
@@ -84,8 +84,6 @@ void object_manager__update(object_manager_t* self) {
                 SDL_free(object_data);
                 self->objects_data[i] = nullptr;
                 removed = true;
-
-                continue;
             }
         }
     }
@@ -105,35 +103,35 @@ void object_manager__draw(object_manager_t* self, SceneDesc_t const* scene_desc,
         return;
     }
 
-    DObject_t const** object_ptr = &object;
+    if (object->m_pClass != nullptr) return;
+    if ((object->m_Flags & 0x01) == 0) return; // !visible
 
-    static char const* const NAMES[] = {
-        "Normal",
-        "Model",
-        "WorldModel",
-        "Sprite",
-        "Light",
-        "Camera",
-        "ParticleSystem",
-        "PolyGrid",
-        "LineSystem",
-        "Container",
-    };
-
-    // LOG_INFO("Drawing object of type %s", NAMES[object->m_ObjectType]);
+    uint16_t const* object_id = &object->m_ObjectID;
 
     if (OBJECT_VTABLE[object->m_ObjectType].draw == nullptr) {
         return;
     }
 
-    object_data_t** object_data_ptr = SDL_bsearch(
-        &object_ptr,
-        self->objects_data,
-        self->objects_data_capacity,
-        sizeof(object_data_t*),
-        compare_object_ptrs_by_id
-    );
+    object_data_t** object_data_ptr = nullptr;
     object_data_t* object_data = nullptr;
+
+    if (object->m_ObjectID == 0xFFFF) {
+        // client-only objects all share this sentinel ID, so id-based lookup can't disambiguate them
+        for (size_t i = 0; i < self->objects_data_capacity; i++) {
+            if (self->objects_data[i] != nullptr && self->objects_data[i]->owner == object) {
+                object_data_ptr = &self->objects_data[i];
+                break;
+            }
+        }
+    } else {
+        object_data_ptr = SDL_bsearch(
+            &object_id,
+            self->objects_data,
+            self->objects_data_capacity,
+            sizeof(object_data_t*),
+            compare_object_ptrs_by_id
+        );
+    }
 
     // Add new object if no data
     if (object_data_ptr == nullptr) {
@@ -172,8 +170,9 @@ void object_manager__draw(object_manager_t* self, SceneDesc_t const* scene_desc,
 
         // Set up object data
         object_data = *object_data_ptr;
-        object_data->object = object;
+        object_data->object_id = object->m_ObjectID;
         object_data->object_type = object->m_ObjectType;
+        object_data->owner = object;
 
         // Re-sort object data by ID
         SDL_qsort(
@@ -184,6 +183,7 @@ void object_manager__draw(object_manager_t* self, SceneDesc_t const* scene_desc,
         );
     } else {
         object_data = *object_data_ptr;
+        object_data->owner = object;
 
         if (object_data->object_type != object->m_ObjectType) {
             if (OBJECT_VTABLE[object_data->object_type].cleanup != nullptr) {
@@ -209,8 +209,8 @@ void object_manager__draw(object_manager_t* self, SceneDesc_t const* scene_desc,
 }
 
 static int compare_object_ptrs_by_id(void const* a, void const* b) {
-    DObject_t const** id_a = *(DObject_t const***) a;
-    DObject_t const** id_b = *(DObject_t const***) b;
+    uint16_t const* id_a = *(uint16_t const**) a;
+    uint16_t const* id_b = *(uint16_t const**) b;
 
     if (id_a == nullptr && id_b == nullptr) {
         return 0;

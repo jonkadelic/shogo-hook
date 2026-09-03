@@ -9,7 +9,8 @@
 #include "render/object/object_model.h"
 
 typedef struct object_data {
-    DObject_t const* object;
+    uint16_t object_id;
+    DObject_t const* owner;
     ObjectType_t object_type;
     uint64_t last_used;
     union {

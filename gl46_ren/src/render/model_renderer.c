@@ -48,9 +48,6 @@ bool model_renderer__init(model_renderer_t* self, ModelInstance_t const* model_i
         goto err;
     }
 
-    // glEnable(GL_CULL_FACE);
-    // glCullFace(GL_FRONT);
-
     static size_t const WIND_ARRAY[3] = { 0, 2, 1 };
     for (size_t i = 0; i < model_instance->m_pModelData->m_nFaces; i++) {
         auto face = &model_instance->m_pModelData->m_pFaces[i];
@@ -61,7 +58,7 @@ bool model_renderer__init(model_renderer_t* self, ModelInstance_t const* model_i
 
             vertices[j].position[0] = vertex->m_Position.x;
             vertices[j].position[1] = vertex->m_Position.y;
-            vertices[j].position[2] = -vertex->m_Position.z;
+            vertices[j].position[2] = -vertex->m_Position.z; // without this, model vertices are flipped
 
             vertices[j].color[0] = 1.0f;
             vertices[j].color[1] = 1.0f;

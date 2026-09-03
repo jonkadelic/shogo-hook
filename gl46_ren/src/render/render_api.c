@@ -151,7 +151,7 @@ uint32_t __cdecl r_RenderScene(SceneDesc_t* pSceneDesc) {
         renderer__draw_object(pSceneDesc, pSceneDesc->m_pObjectList[i]);
     }
 
-    if (pSceneDesc->m_hRenderContext != nullptr && pSceneDesc->m_hRenderContext != nullptr && pSceneDesc->m_hRenderContext->m_pMainWorld != nullptr) {
+    if (pSceneDesc->m_hRenderContext != nullptr && pSceneDesc->m_hRenderContext->m_pMainWorld != nullptr) {
         for (size_t i = 0; i < pSceneDesc->m_hRenderContext->m_pMainWorld->m_pWorldBsp->m_nWorldModels; i++) {
             auto object_list = &pSceneDesc->m_hRenderContext->m_pMainWorld->m_pWorldBsp->m_WorldModels[i];
 
