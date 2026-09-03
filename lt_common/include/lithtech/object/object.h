@@ -23,6 +23,29 @@ typedef struct DAttachment {
 
 } DAttachment_t;
 
+typedef struct [[gnu::aligned(2)]] ObjectString {
+    DLink_t m_Link;
+    void* unk_0c[2];
+    uint16_t m_nChars;
+    char m_Chars[64];
+} ObjectString_t;
+static_assert(sizeof(ObjectString_t) == 0x58);
+static_assert(offsetof(ObjectString_t, m_Link) == 0x00);
+static_assert(offsetof(ObjectString_t, m_nChars) == 0x14);
+static_assert(offsetof(ObjectString_t, m_Chars) == 0x16);
+
+typedef struct DObjectClass {
+    DLink_t m_Link;
+    ObjectString_t** m_ppObjectName;
+    float m_fNextUpdate;
+    float m_fDeactivateTime;
+    float m_fDeactivateTime2;
+    void* unk_1c[5];
+    ObjectString_t** m_ppModelFilename;
+    ObjectString_t** m_ppTextureFilename;
+    // more fields
+} DObjectClass_t;
+
 typedef struct DObject {
     void* unk_0[10];
     uint32_t m_Flags;
@@ -48,9 +71,10 @@ typedef struct DObject {
     DVector_t m_MinBounds;
     DVector_t m_MaxBounds;
     DVector_t m_HalfSize;
-    uint32_t unk_00c4[25];
+    uint32_t unk_00c4[24];
+    DObjectClass_t* m_pClass;
 } DObject_t;
-static_assert(sizeof(DObject_t) == 0x128);
+static_assert(sizeof(DObject_t) == 0x128); // absolutely correct - do not change
 static_assert(offsetof(DObject_t, m_Flags) == 0x28);
 static_assert(offsetof(DObject_t, m_UserFlags) == 0x2c);
 static_assert(offsetof(DObject_t, m_ColorR) == 0x30);

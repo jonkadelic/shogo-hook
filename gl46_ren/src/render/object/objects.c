@@ -13,13 +13,13 @@
 
 #define OBJECT_DATA_ALLOC_LEN   (4)
 
-// object_id must be first member for `compare_object_ptrs_by_id` to work
-static_assert(offsetof(object_data_t, object_id) == 0);
+// object must be first member for `compare_object_ptrs_by_id` to work
+static_assert(offsetof(object_data_t, object) == 0);
 
 static int compare_object_ptrs_by_id(void const* a, void const* b);
 
 typedef struct object_vtable {
-    void (*draw)(object_data_t* self, tessellator_t* tessellator, DObject_t const* object);
+    void (*draw)(object_data_t* self, SceneDesc_t const* scene_desc, DObject_t const* object);
     void (*cleanup)(object_data_t* self);
 } object_vtable_t;
 
@@ -31,6 +31,10 @@ static object_vtable_t const OBJECT_VTABLE[NumObjectTypes] = {
     [ObjectType_WorldModel] = {
         .draw = object_worldmodel__draw,
         .cleanup = object_worldmodel__cleanup,
+    },
+    [ObjectType_Model] = {
+        .draw = object_model__draw,
+        .cleanup = object_model__cleanup,
     }
 };
 
@@ -66,12 +70,11 @@ void object_manager__cleanup(object_manager_t* self) {
 void object_manager__update(object_manager_t* self) {
     uint64_t ticks = SDL_GetTicks();
 
+    bool removed = false;
     for (size_t i = 0; i < self->objects_data_capacity; i++) {
         object_data_t* object_data = self->objects_data[i];
 
         if (object_data != nullptr) {
-            SDL_assert(object_data->object_type < NumObjectTypes);
-
             if (object_data->last_used + OBJECT_TIMEOUT < ticks) {
                 // Free object as it has timed out
                 if (OBJECT_VTABLE[object_data->object_type].cleanup != nullptr) {
@@ -80,13 +83,29 @@ void object_manager__update(object_manager_t* self) {
 
                 SDL_free(object_data);
                 self->objects_data[i] = nullptr;
+                removed = true;
+
+                continue;
             }
         }
     }
+
+    if (removed) {
+        SDL_qsort(
+            self->objects_data,
+            self->objects_data_capacity,
+            sizeof(object_data_t*),
+            compare_object_ptrs_by_id
+        );
+    }
 }
 
-void object_manager__draw(object_manager_t* self, DObject_t const* object) {
-    uint16_t const* object_id = &object->m_ObjectID;
+void object_manager__draw(object_manager_t* self, SceneDesc_t const* scene_desc, DObject_t const* object) {
+    if (object == nullptr || object->m_ObjectType >= NumObjectTypes) {
+        return;
+    }
+
+    DObject_t const** object_ptr = &object;
 
     static char const* const NAMES[] = {
         "Normal",
@@ -108,7 +127,7 @@ void object_manager__draw(object_manager_t* self, DObject_t const* object) {
     }
 
     object_data_t** object_data_ptr = SDL_bsearch(
-        &object_id,
+        &object_ptr,
         self->objects_data,
         self->objects_data_capacity,
         sizeof(object_data_t*),
@@ -153,7 +172,7 @@ void object_manager__draw(object_manager_t* self, DObject_t const* object) {
 
         // Set up object data
         object_data = *object_data_ptr;
-        object_data->object_id = object->m_ObjectID;
+        object_data->object = object;
         object_data->object_type = object->m_ObjectType;
 
         // Re-sort object data by ID
@@ -165,6 +184,17 @@ void object_manager__draw(object_manager_t* self, DObject_t const* object) {
         );
     } else {
         object_data = *object_data_ptr;
+
+        if (object_data->object_type != object->m_ObjectType) {
+            if (OBJECT_VTABLE[object_data->object_type].cleanup != nullptr) {
+                OBJECT_VTABLE[object_data->object_type].cleanup(object_data);
+            }
+
+            SDL_memset(&object_data->as_polygrid, 0, sizeof(object_data->as_polygrid));
+            SDL_memset(&object_data->as_worldmodel, 0, sizeof(object_data->as_worldmodel));
+            SDL_memset(&object_data->as_model, 0, sizeof(object_data->as_model));
+            object_data->object_type = object->m_ObjectType;
+        }
     }
 
     SDL_assert(object_data != nullptr);
@@ -174,13 +204,13 @@ void object_manager__draw(object_manager_t* self, DObject_t const* object) {
     SDL_assert(object->m_ObjectType < NumObjectTypes);
 
     if (OBJECT_VTABLE[object->m_ObjectType].draw != nullptr) {
-        OBJECT_VTABLE[object->m_ObjectType].draw(object_data, self->tessellator, object);
+        OBJECT_VTABLE[object->m_ObjectType].draw(object_data, scene_desc, object);
     }
 }
 
 static int compare_object_ptrs_by_id(void const* a, void const* b) {
-    uint16_t const* id_a = *(uint16_t const**) a;
-    uint16_t const* id_b = *(uint16_t const**) b;
+    DObject_t const** id_a = *(DObject_t const***) a;
+    DObject_t const** id_b = *(DObject_t const***) b;
 
     if (id_a == nullptr && id_b == nullptr) {
         return 0;

@@ -5,24 +5,25 @@
 #include "renderer.h"
 #include "shaders/shaders.h"
 
-void object_polygrid__draw(object_data_t* self, tessellator_t* tessellator, DObject_t const* object) {
+void object_polygrid__draw(object_data_t* self, SceneDesc_t const* scene_desc, DObject_t const* object) {
     auto polygrid = (PolyGrid_t const*) object;
-    auto polygrid_data = &self->as_polygrid;
+    auto data = &self->as_polygrid;
 
     auto shader = &renderer__get_shaders()[SHADER_ID__POLYGRID];
 
     // If mesh doesn't exist, init mesh
-    if (!polygrid_data->mesh_init) {
-        if (!mesh__init(&polygrid_data->mesh)) {
+    if (!data->mesh_init) {
+        if (!mesh__init(&data->mesh)) {
             LOG_ERROR("Failed to init polygrid mesh");
             return;
         }
 
-        polygrid_data->mesh_init = true;
+        data->mesh_init = true;
     }
 
     // If size doesn't match, re-mesh
-    if (polygrid_data->width != polygrid->m_Width || polygrid_data->height != polygrid->m_Height) {
+    auto tessellator = renderer__get_tessellator();
+    if (data->width != polygrid->m_Width || data->height != polygrid->m_Height) {
         // Append all vertices
         for (uint32_t y = 0; y < polygrid->m_Height; y++) {
             for (uint32_t x = 0; x < polygrid->m_Width; x++) {
@@ -60,34 +61,34 @@ void object_polygrid__draw(object_data_t* self, tessellator_t* tessellator, DObj
         }
 
         // Upload new mesh
-        tessellator__upload_and_reset(tessellator, &polygrid_data->mesh);
+        tessellator__upload_and_reset(tessellator, &data->mesh);
 
         // Update size
-        polygrid_data->width = polygrid->m_Width;
-        polygrid_data->height = polygrid->m_Height;
+        data->width = polygrid->m_Width;
+        data->height = polygrid->m_Height;
     }
 
     // Create SSBOs if needed
-    if (polygrid_data->gl_offsets_ssbo == 0) {
-        glCreateBuffers(1, &polygrid_data->gl_offsets_ssbo);
-        if (polygrid_data->gl_offsets_ssbo == 0) {
+    if (data->gl_offsets_ssbo == 0) {
+        glCreateBuffers(1, &data->gl_offsets_ssbo);
+        if (data->gl_offsets_ssbo == 0) {
             LOG_ERROR("Failed to init offsets SSBO");
             return;
         }
     }
-    if (polygrid_data->gl_colors_ssbo == 0) {
-        glCreateBuffers(1, &polygrid_data->gl_colors_ssbo);
-        if (polygrid_data->gl_colors_ssbo == 0) {
+    if (data->gl_colors_ssbo == 0) {
+        glCreateBuffers(1, &data->gl_colors_ssbo);
+        if (data->gl_colors_ssbo == 0) {
             LOG_ERROR("Failed to init colors SSBO");
             return;
         }
     }
 
     // Upload new offsets to SSBO
-    glNamedBufferData(polygrid_data->gl_offsets_ssbo, sizeof(int8_t) * polygrid->m_Width * polygrid->m_Height, polygrid->m_pData, GL_STREAM_DRAW);
+    glNamedBufferData(data->gl_offsets_ssbo, sizeof(int8_t) * polygrid->m_Width * polygrid->m_Height, polygrid->m_pData, GL_STREAM_DRAW);
 
     // Upload new colors to SSBO
-    glNamedBufferData(polygrid_data->gl_colors_ssbo, sizeof(float) * 256 * 4, polygrid->m_ColorTable, GL_STREAM_DRAW);
+    glNamedBufferData(data->gl_colors_ssbo, sizeof(float) * 256 * 4, polygrid->m_ColorTable, GL_STREAM_DRAW);
 
     HMM_Mat4 projection_matrix = renderer__get_view_projection_matrix();
 
@@ -123,26 +124,26 @@ void object_polygrid__draw(object_data_t* self, tessellator_t* tessellator, DObj
     shader__set_uniform_texture(shader, "u_texture", texture);
 
     // Bind SSBOs
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, polygrid_data->gl_offsets_ssbo);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, polygrid_data->gl_colors_ssbo);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, data->gl_offsets_ssbo);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, data->gl_colors_ssbo);
 
     glEnable(GL_DEPTH_TEST);
 
     // Draw mesh
-    mesh__draw(&polygrid_data->mesh);
+    mesh__draw(&data->mesh);
 
     glDisable(GL_DEPTH_TEST);
 }
 
 void object_polygrid__cleanup(object_data_t* self) {
-    object_polygrid_t* polygrid_data = &self->as_polygrid;
+    object_polygrid_t* data = &self->as_polygrid;
 
-    mesh__cleanup(&polygrid_data->mesh);
-    polygrid_data->mesh_init = false;
+    mesh__cleanup(&data->mesh);
+    data->mesh_init = false;
 
-    glDeleteBuffers(1, &polygrid_data->gl_offsets_ssbo);
-    polygrid_data->gl_offsets_ssbo = 0;
+    glDeleteBuffers(1, &data->gl_offsets_ssbo);
+    data->gl_offsets_ssbo = 0;
 
-    polygrid_data->width = 0;
-    polygrid_data->height = 0;
+    data->width = 0;
+    data->height = 0;
 }

@@ -14,5 +14,5 @@ typedef struct object_polygrid {
     GLuint gl_colors_ssbo;
 } object_polygrid_t;
 
-void object_polygrid__draw(object_data_t* self, tessellator_t* tessellator, DObject_t const* object);
+void object_polygrid__draw(object_data_t* self, SceneDesc_t const* scene_desc, DObject_t const* object);
 void object_polygrid__cleanup(object_data_t* self);

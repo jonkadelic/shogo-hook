@@ -67,7 +67,7 @@ bool renderer__is_in_2d(void);
 
 void renderer__swap_buffers(void);
 
-void renderer__draw_object(DObject_t const* object);
+void renderer__draw_object(SceneDesc_t const* scene_desc, DObject_t const* object);
 
 void renderer__set_camera(DVector_t pos, DRotation_t rotation, float fov_y, float aspect);
 HMM_Mat4 renderer__get_view_projection_matrix(void);

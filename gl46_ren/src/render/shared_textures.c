@@ -59,9 +59,12 @@ texture_t* shared_texture_manager__get_texture(shared_texture_manager_t* self, S
             LOG_ERROR("Failed to create new shared texture");
             goto err;
         }
+
+        LOG_DEBUG("Loaded shared texture with name \"%s\"", path_upper);
     }
 
     SDL_free(path_upper);
+
 
     SDL_assert(texture != nullptr);
     return &texture->texture;

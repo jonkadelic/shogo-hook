@@ -148,7 +148,7 @@ uint32_t __cdecl r_RenderScene(SceneDesc_t* pSceneDesc) {
     }
 
     for (size_t i = 0; i < pSceneDesc->m_nObjectListSize; i++) {
-        renderer__draw_object(pSceneDesc->m_pObjectList[i]);
+        renderer__draw_object(pSceneDesc, pSceneDesc->m_pObjectList[i]);
     }
 
     if (pSceneDesc->m_hRenderContext != nullptr && pSceneDesc->m_hRenderContext != nullptr && pSceneDesc->m_hRenderContext->m_pMainWorld != nullptr) {
@@ -158,7 +158,7 @@ uint32_t __cdecl r_RenderScene(SceneDesc_t* pSceneDesc) {
             auto current_list = object_list->m_pNext;
             while (current_list != object_list) {
                 SDL_assert(current_list->m_pObject->m_ObjectType < NumObjectTypes);
-                renderer__draw_object(current_list->m_pObject);
+                renderer__draw_object(pSceneDesc, current_list->m_pObject);
                 current_list = current_list->m_pNext;
             }
         }

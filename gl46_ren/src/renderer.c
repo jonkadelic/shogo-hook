@@ -260,8 +260,8 @@ void renderer__swap_buffers(void) {
     RENDERER.last_swap = SDL_GetTicksNS();
 }
 
-void renderer__draw_object(DObject_t const* object) {
-    object_manager__draw(&RENDERER.objects, object);
+void renderer__draw_object(SceneDesc_t const* scene_desc, DObject_t const* object) {
+    object_manager__draw(&RENDERER.objects, scene_desc, object);
 }
 
 void renderer__set_camera(DVector_t pos, DRotation_t rotation, float fov_y, float aspect) {

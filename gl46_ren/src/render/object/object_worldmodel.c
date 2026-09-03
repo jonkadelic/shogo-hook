@@ -3,9 +3,18 @@
 #include "logger.h"
 #include "render/object/objects.h"
 
-void object_worldmodel__draw(object_data_t* self, tessellator_t* tessellator, DObject_t const* object) {
+void object_worldmodel__draw(object_data_t* self, SceneDesc_t const* scene_desc, DObject_t const* object) {
     auto worldmodel = (WorldModelInstance_t*) object;
     auto data = &self->as_worldmodel;
+
+    if (scene_desc->m_ModelHookFn != nullptr) {
+        ModelHookData_t hook_data = {
+            .m_hObject = object,
+            .m_ObjectFlags = object->m_Flags,
+            .m_Flags = 1,
+        };
+        scene_desc->m_ModelHookFn(&hook_data, scene_desc->m_ModelHookUser);
+    }
 
     if (!data->renderer_init) {
         if (!world_bsp_renderer__init(&data->renderer, worldmodel->m_pWorldData->m_pValidBsp)) {

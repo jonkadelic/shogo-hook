@@ -17,6 +17,13 @@ static_assert(offsetof(SkyDef_t, m_Max) == 0x0c);
 static_assert(offsetof(SkyDef_t, m_ViewMin) == 0x18);
 static_assert(offsetof(SkyDef_t, m_ViewMax) == 0x24);
 
+typedef struct ModelHookData {
+    DObject_t const* m_hObject;
+    uint32_t m_Flags;
+    uint32_t m_ObjectFlags;
+    DVector_t* m_LightAdd;
+} ModelHookData_t;
+
 typedef enum SceneDrawMode : uint32_t {
     SceneDrawMode_Normal = 1,
     SceneDrawMode_ObjectList = 2,
@@ -50,7 +57,7 @@ typedef struct SceneDesc {
     DRotation_t m_Rotation;
     DObject_t** m_pObjectList;
     uint32_t m_nObjectListSize;
-    void* m_ModelHookFn;
+    void (*m_ModelHookFn)(ModelHookData_t* data, void* user);
     void* m_ModelHookUser;
 } SceneDesc_t;
 static_assert(sizeof(SceneDesc_t) == 0xf0);

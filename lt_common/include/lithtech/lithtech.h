@@ -10,6 +10,7 @@ extern "C" {
 #include "lithtech/object/object.h"
 #include "lithtech/object/polygrid.h"
 #include "lithtech/object/worldmodel.h"
+#include "lithtech/object/model.h"
 #include "lithtech/render.h"
 #include "lithtech/scene.h"
 #include "lithtech/shapes.h"

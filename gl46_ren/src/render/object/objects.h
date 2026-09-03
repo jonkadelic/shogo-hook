@@ -6,14 +6,16 @@
 
 #include "render/object/object_polygrid.h"
 #include "render/object/object_worldmodel.h"
+#include "render/object/object_model.h"
 
 typedef struct object_data {
-    uint16_t object_id;
+    DObject_t const* object;
     ObjectType_t object_type;
     uint64_t last_used;
     union {
         object_polygrid_t as_polygrid;
         object_worldmodel_t as_worldmodel;
+        object_model_t as_model;
     }; 
 } object_data_t;
 
@@ -29,4 +31,4 @@ void object_manager__cleanup(object_manager_t* self);
 
 void object_manager__update(object_manager_t* self);
 
-void object_manager__draw(object_manager_t* self, DObject_t const* object);
+void object_manager__draw(object_manager_t* self, SceneDesc_t const* scene_desc, DObject_t const* object);

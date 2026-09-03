@@ -10,5 +10,5 @@ typedef struct object_worldmodel {
     world_bsp_renderer_t renderer;
 } object_worldmodel_t;
 
-void object_worldmodel__draw(object_data_t* self, tessellator_t* tessellator, DObject_t const* object);
+void object_worldmodel__draw(object_data_t* self, SceneDesc_t const* scene_desc, DObject_t const* object);
 void object_worldmodel__cleanup(object_data_t* self);
