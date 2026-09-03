@@ -5,6 +5,7 @@
 #include <lithtech/lithtech.h>
 
 #include "render/object/object_polygrid.h"
+#include "render/object/object_worldmodel.h"
 
 typedef struct object_data {
     uint16_t object_id;
@@ -12,6 +13,7 @@ typedef struct object_data {
     uint64_t last_used;
     union {
         object_polygrid_t as_polygrid;
+        object_worldmodel_t as_worldmodel;
     }; 
 } object_data_t;
 

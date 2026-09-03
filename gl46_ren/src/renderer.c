@@ -62,6 +62,7 @@ bool renderer__init(RMode_t const* rmode, void* hwnd) {
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG | SDL_GL_CONTEXT_ROBUST_ACCESS_FLAG);
+        SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 32);
 
         RENDERER.gl_context = SDL_GL_CreateContext(RENDERER.window);
         if (RENDERER.gl_context == nullptr) {

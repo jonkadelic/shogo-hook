@@ -126,8 +126,12 @@ void object_polygrid__draw(object_data_t* self, tessellator_t* tessellator, DObj
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, polygrid_data->gl_offsets_ssbo);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, polygrid_data->gl_colors_ssbo);
 
+    glEnable(GL_DEPTH_TEST);
+
     // Draw mesh
     mesh__draw(&polygrid_data->mesh);
+
+    glDisable(GL_DEPTH_TEST);
 }
 
 void object_polygrid__cleanup(object_data_t* self) {

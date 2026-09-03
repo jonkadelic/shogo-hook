@@ -149,6 +149,21 @@ static shared_texture_t* create_texture(shared_texture_manager_t* self, TextureD
         tbuf[i] = argb;
     }
 
+    if (texture_data->m_Header.m_IFlags & 0x02) { // DTX_ALPHA_MASKS
+        for (size_t i = 0; i < texture_data->m_Width * texture_data->m_Height; i++) {
+            uint8_t alpha_pair = texture_data->m_pAlphaBuffer[i >> 1];
+            uint8_t alpha_val = 0;
+            if (i % 2 == 0) {
+                alpha_val = alpha_pair & 0x0F;
+            } else {
+                alpha_val = (alpha_pair & 0xF0) >> 4;
+            }
+
+            tbuf[i] &= 0x00FFFFFF;
+            tbuf[i] |= ((alpha_val << 4) | alpha_val) << 24;
+        }
+    }
+
     texture__upload(&out->texture, texture_data->m_Width, texture_data->m_Height, COLOR_FORMAT__RGBA32, tbuf);
     SDL_free(tbuf); tbuf = nullptr;
 

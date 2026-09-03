@@ -35,7 +35,6 @@ void __cdecl r_SetSoftSky(SharedTexture_t** ppTex) {
 void __cdecl r_BindTexture(SharedTexture_t* pTex, uint8_t bTextureChanged) {
     LOG_FUNC();
 
-    LOG_INFO("Binding texture at \"%s\"", pTex->m_pFile->m_Filename);
     shared_texture_manager__get_texture(renderer__get_shared_textures(), pTex);
 }
 
@@ -152,18 +151,18 @@ uint32_t __cdecl r_RenderScene(SceneDesc_t* pSceneDesc) {
         renderer__draw_object(pSceneDesc->m_pObjectList[i]);
     }
 
-    // if (pSceneDesc->m_hRenderContext != nullptr && pSceneDesc->m_hRenderContext != nullptr && pSceneDesc->m_hRenderContext->m_pMainWorld != nullptr) {
-    //     for (size_t i = 0; i < pSceneDesc->m_hRenderContext->m_pMainWorld->m_pWorldBsp->m_nWorldModels; i++) {
-    //         auto object_list = &pSceneDesc->m_hRenderContext->m_pMainWorld->m_pWorldBsp->m_WorldModels[i];
+    if (pSceneDesc->m_hRenderContext != nullptr && pSceneDesc->m_hRenderContext != nullptr && pSceneDesc->m_hRenderContext->m_pMainWorld != nullptr) {
+        for (size_t i = 0; i < pSceneDesc->m_hRenderContext->m_pMainWorld->m_pWorldBsp->m_nWorldModels; i++) {
+            auto object_list = &pSceneDesc->m_hRenderContext->m_pMainWorld->m_pWorldBsp->m_WorldModels[i];
 
-    //         auto current_list = object_list->m_pNext;
-    //         while (current_list != object_list) {
-    //             SDL_assert(current_list->m_pObject->m_ObjectType < NumObjectTypes);
-    //             renderer__draw_object(current_list->m_pObject);
-    //             current_list = current_list->m_pNext;
-    //         }
-    //     }
-    // }
+            auto current_list = object_list->m_pNext;
+            while (current_list != object_list) {
+                SDL_assert(current_list->m_pObject->m_ObjectType < NumObjectTypes);
+                renderer__draw_object(current_list->m_pObject);
+                current_list = current_list->m_pNext;
+            }
+        }
+    }
 
     return true;
 }

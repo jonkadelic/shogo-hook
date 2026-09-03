@@ -49,7 +49,7 @@ typedef struct TextureData {
     uint32_t m_Height;
     uint32_t m_PitchBytes;
     uint8_t* m_pDataBuffer;
-    uint32_t unk_54;
+    uint8_t* m_pAlphaBuffer;
 } TextureData_t;
 static_assert(sizeof(TextureData_t) == 0x5c);
 static_assert(offsetof(TextureData_t, m_Width) == 0x48);

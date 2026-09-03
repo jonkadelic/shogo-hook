@@ -49,7 +49,7 @@ void world_bsp_renderer__cleanup(world_bsp_renderer_t* self) {
     self->models_len = 0;
 }
 
-void world_bsp_renderer__draw(world_bsp_renderer_t* self, WorldBsp_t const* world_bsp) {
+void world_bsp_renderer__draw(world_bsp_renderer_t* self, HMM_Mat4 model_matrix, WorldBsp_t const* world_bsp) {
     if (world_bsp != self->world_bsp) {
         for (size_t i = 0; i < self->models_len; i++) {
             mesh__cleanup(&self->models[i].mesh);
@@ -65,7 +65,6 @@ void world_bsp_renderer__draw(world_bsp_renderer_t* self, WorldBsp_t const* worl
     }
 
     HMM_Mat4 projection_matrix = renderer__get_view_projection_matrix();
-    HMM_Mat4 model_matrix = HMM_M4D(1.0f);
 
     shader_t const* shader = &renderer__get_shaders()[SHADER_ID__WORLD];
     

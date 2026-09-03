@@ -1,6 +1,7 @@
 #pragma once
 
 #include <lithtech/lithtech.h>
+#include <hmm/hmm.h>
 
 #include "render/mesh.h"
 #include "render/texture.h"
@@ -23,4 +24,4 @@ bool world_bsp_renderer__init(
 );
 void world_bsp_renderer__cleanup(world_bsp_renderer_t* self);
 
-void world_bsp_renderer__draw(world_bsp_renderer_t* self, WorldBsp_t const* world_bsp);
+void world_bsp_renderer__draw(world_bsp_renderer_t* self, HMM_Mat4 model_matrix, WorldBsp_t const* world_bsp);

@@ -27,6 +27,10 @@ static object_vtable_t const OBJECT_VTABLE[NumObjectTypes] = {
     [ObjectType_PolyGrid] = {
         .draw = object_polygrid__draw,
         .cleanup = object_polygrid__cleanup,
+    },
+    [ObjectType_WorldModel] = {
+        .draw = object_worldmodel__draw,
+        .cleanup = object_worldmodel__cleanup,
     }
 };
 
