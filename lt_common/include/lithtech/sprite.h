@@ -1,7 +1,6 @@
 #pragma once
 
-#include "./common.h"
-
+#include "lithtech/common.h"
 #include "lithtech/link.h"
 #include "lithtech/texture.h"
 

@@ -1,9 +1,9 @@
 #pragma once
 
-#include "./common.h"
-#include "./shapes.h"
-#include "./sprite.h"
-#include "./link.h"
+#include "lithtech/common.h"
+#include "lithtech/shapes.h"
+#include "lithtech/sprite.h"
+#include "lithtech/link.h"
 
 typedef enum ObjectType: uint8_t {
     ObjectType_Normal = 0, // Invisible object
@@ -48,8 +48,9 @@ typedef struct DObject {
     DVector_t m_MinBounds;
     DVector_t m_MaxBounds;
     DVector_t m_HalfSize;
+    uint32_t unk_00c4[25];
 } DObject_t;
-static_assert(sizeof(DObject_t) == 0xc4);
+static_assert(sizeof(DObject_t) == 0x128);
 static_assert(offsetof(DObject_t, m_Flags) == 0x28);
 static_assert(offsetof(DObject_t, m_UserFlags) == 0x2c);
 static_assert(offsetof(DObject_t, m_ColorR) == 0x30);
@@ -68,39 +69,11 @@ static_assert(offsetof(DObject_t, m_MinBounds) == 0xa0);
 static_assert(offsetof(DObject_t, m_MaxBounds) == 0xac);
 static_assert(offsetof(DObject_t, m_HalfSize) == 0xb8);
 
-typedef struct PolyGrid {
-    DObject_t base;
-    uint32_t unk_00c4[25];
-    int8_t* m_pData; // length = m_Width * m_Height
-    uint16_t* m_pIndices;
-    void* m_pSprite;
-    SpriteTracker_t m_SpriteTracker;
-    void* m_pEnvMap;
-    float m_xPan;
-    float m_yPan;
-    float m_xScale;
-    float m_yScale;
-    uint32_t m_nTris; // = (m_Width - 1) * (m_Height - 1) * 2
-    uint32_t m_nIndices; // = m_nTris * 3
-    DLink_t m_LeafLinks;
-    uint32_t m_Width;   // number of points along X axis
-    uint32_t m_Height;  // number of points along Z axis
-    float m_ColorTable[256][4];
-} PolyGrid_t;
-static_assert(sizeof(PolyGrid_t) == 0x1178);
-static_assert(offsetof(PolyGrid_t, base) == 0x0000);
-static_assert(offsetof(PolyGrid_t, m_pData) == 0x0128);
-static_assert(offsetof(PolyGrid_t, m_pIndices) == 0x012c);
-static_assert(offsetof(PolyGrid_t, m_pSprite) == 0x0130);
-static_assert(offsetof(PolyGrid_t, m_SpriteTracker) == 0x0134);
-static_assert(offsetof(PolyGrid_t, m_pEnvMap) == 0x0148);
-static_assert(offsetof(PolyGrid_t, m_xPan) == 0x014c);
-static_assert(offsetof(PolyGrid_t, m_yPan) == 0x0150);
-static_assert(offsetof(PolyGrid_t, m_xScale) == 0x0154);
-static_assert(offsetof(PolyGrid_t, m_yScale) == 0x0158);
-static_assert(offsetof(PolyGrid_t, m_nTris) == 0x015c);
-static_assert(offsetof(PolyGrid_t, m_nIndices) == 0x0160);
-static_assert(offsetof(PolyGrid_t, m_LeafLinks) == 0x0164);
-static_assert(offsetof(PolyGrid_t, m_Width) == 0x0170);
-static_assert(offsetof(PolyGrid_t, m_Height) == 0x0174);
-static_assert(offsetof(PolyGrid_t, m_ColorTable) == 0x0178);
+typedef struct Node Node_t;
+
+typedef struct DObjectList {
+    struct DObjectList* m_pPrev;
+    struct DObjectList* m_pNext;
+    DObject_t* m_pObject;
+    uint32_t unk_0c[3];
+} DObjectList_t;

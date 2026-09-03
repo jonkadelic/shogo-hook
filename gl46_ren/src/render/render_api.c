@@ -35,10 +35,8 @@ void __cdecl r_SetSoftSky(SharedTexture_t** ppTex) {
 void __cdecl r_BindTexture(SharedTexture_t* pTex, uint8_t bTextureChanged) {
     LOG_FUNC();
 
-    auto data = RENDER_STRUCT->GetTexture(pTex, 0);
-    if (data != nullptr) {
-        RENDER_STRUCT->FreeTexture(pTex);
-    }
+    LOG_INFO("Binding texture at \"%s\"", pTex->m_pFile->m_Filename);
+    shared_texture_manager__get_texture(renderer__get_shared_textures(), pTex);
 }
 
 void __cdecl r_UnbindTexture(SharedTexture_t* pTex) {
@@ -133,26 +131,39 @@ uint32_t __cdecl r_RenderScene(SceneDesc_t* pSceneDesc) {
 
     if (pSceneDesc->m_hRenderContext != nullptr && pSceneDesc->m_hRenderContext->m_pMainWorld != nullptr) {
         if (r->world == nullptr) {
-            r->world = SDL_malloc(sizeof(world_t));
+            r->world = SDL_malloc(sizeof(world_renderer_t));
             if (r->world == nullptr) {
                 LOG_ERROR("Failed to alloc world");
                 return 0;
             }
 
-            if (!world__init(r->world, pSceneDesc, &r->tessellator, &r->shared_textures)) {
+            if (!world_renderer__init(r->world, pSceneDesc->m_hRenderContext->m_pMainWorld)) {
                 LOG_ERROR("Failed to init world");
                 return 0;
             }
         }
     }
 
-    if (pSceneDesc->m_DrawMode == SceneDrawMode_Normal) {
-        world__draw(r->world, pSceneDesc);
-    } else if (pSceneDesc->m_DrawMode == SceneDrawMode_ObjectList) {
-        for (size_t i = 0; i < pSceneDesc->m_nObjectListSize; i++) {
-            renderer__draw_object(pSceneDesc->m_pObjectList[i]);
-        }
+    if (pSceneDesc->m_DrawMode != SceneDrawMode_ObjectList) {
+        world_renderer__draw(r->world, pSceneDesc->m_hRenderContext->m_pMainWorld);
     }
+
+    for (size_t i = 0; i < pSceneDesc->m_nObjectListSize; i++) {
+        renderer__draw_object(pSceneDesc->m_pObjectList[i]);
+    }
+
+    // if (pSceneDesc->m_hRenderContext != nullptr && pSceneDesc->m_hRenderContext != nullptr && pSceneDesc->m_hRenderContext->m_pMainWorld != nullptr) {
+    //     for (size_t i = 0; i < pSceneDesc->m_hRenderContext->m_pMainWorld->m_pWorldBsp->m_nWorldModels; i++) {
+    //         auto object_list = &pSceneDesc->m_hRenderContext->m_pMainWorld->m_pWorldBsp->m_WorldModels[i];
+
+    //         auto current_list = object_list->m_pNext;
+    //         while (current_list != object_list) {
+    //             SDL_assert(current_list->m_pObject->m_ObjectType < NumObjectTypes);
+    //             renderer__draw_object(current_list->m_pObject);
+    //             current_list = current_list->m_pNext;
+    //         }
+    //     }
+    // }
 
     return true;
 }
@@ -271,18 +282,6 @@ void* __cdecl r_LockSurface(void* pSurface) {
 
 void __cdecl r_UnlockSurface(void* pSurface) {
     LOG_FUNC();
-
-    // crashes on exit if rsurface->locked == true - why?
-    // rsurface_id_t id = (rsurface_id_t) pSurface;
-    // if (id == RSURFACE_ID_INVALID) return;
-
-    // auto rsurfaces = renderer__get_rsurfaces();
-    // if (rsurfaces == nullptr) {
-    //     return;
-    // }
-
-    // auto rsurface = rsurface_manager__get_rsurface(rsurfaces, id);
-    // rsurface->locked = false;
 }
 
 DBOOL __cdecl r_OptimizeSurface(void* pSurface, uint32_t transparentColor) {

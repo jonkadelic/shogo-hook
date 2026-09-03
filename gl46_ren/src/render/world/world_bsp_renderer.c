@@ -1,45 +1,33 @@
-#include "./world.h"
+#include "./world_bsp_renderer.h"
 
 #include <hmm/hmm.h>
 
 #include "logger.h"
+#include "render/shader.h"
 #include "renderer.h"
 #include "util/util.h"
 
-static bool build_world(world_t* self);
-
-static bool build_world_model(
-    world_t* self,
+static bool build_world_bsp_models(world_bsp_renderer_t* self);
+static bool build_world_bsp_model(
+    world_bsp_renderer_t* self,
     size_t index
 );
 
-bool world__init(
-    world_t* self,
-    SceneDesc_t const* scene,
-    tessellator_t* tessellator,
-    shared_texture_manager_t* textures
+bool world_bsp_renderer__init(
+    world_bsp_renderer_t* self,
+    WorldBsp_t const* world_bsp
 ) {
     OBJECT_ZERO_INIT(self);
 
-    SharedTexture_t** shared_texture_cache = nullptr;
-
-    if (scene->m_hRenderContext == nullptr || scene->m_hRenderContext->m_pMainWorld == nullptr) {
-        LOG_ERROR("Failed to init world renderer; bad input");
-        goto err;
-    }
-    auto main_world = scene->m_hRenderContext->m_pMainWorld;
-
     // Sanity checks
-    if (main_world == nullptr || main_world->m_pWorldBsp == nullptr || main_world->m_pWorldBsp->m_nTextureNames == 0) {
+    if (world_bsp == nullptr || world_bsp->m_nTextureNames == 0) {
         LOG_ERROR("Failed to init world renderer; bad input");
         goto err;
     }
 
-    self->world = main_world;
-    self->tessellator = tessellator;
-    self->textures = textures;
+    self->world_bsp = world_bsp;
 
-    if (!build_world(self)) {
+    if (!build_world_bsp_models(self)) {
         LOG_ERROR("Failed to build world");
         goto err;
     }
@@ -47,11 +35,11 @@ bool world__init(
     return true;
 
 err:
-    world__cleanup(self);
+    world_bsp_renderer__cleanup(self);
     return false;
 }
 
-void world__cleanup(world_t* self) {
+void world_bsp_renderer__cleanup(world_bsp_renderer_t* self) {
     for (size_t i = 0; i < self->models_len; i++) {
         mesh__cleanup(&self->models[i].mesh);
     }
@@ -61,16 +49,16 @@ void world__cleanup(world_t* self) {
     self->models_len = 0;
 }
 
-void world__draw(world_t* self, SceneDesc_t const* scene) {
-    if (scene->m_hRenderContext != nullptr && scene->m_hRenderContext->m_pMainWorld != self->world) {
+void world_bsp_renderer__draw(world_bsp_renderer_t* self, WorldBsp_t const* world_bsp) {
+    if (world_bsp != self->world_bsp) {
         for (size_t i = 0; i < self->models_len; i++) {
             mesh__cleanup(&self->models[i].mesh);
         }
 
         SDL_free(self->models);
 
-        self->world = scene->m_hRenderContext->m_pMainWorld;
-        if (!build_world(self)) {
+        self->world_bsp = world_bsp;
+        if (!build_world_bsp_models(self)) {
             LOG_ERROR("Failed to build world");
             return;
         }
@@ -90,6 +78,8 @@ void world__draw(world_t* self, SceneDesc_t const* scene) {
 
     // Draw models
     for (size_t i = 0; i < self->models_len; i++) {
+        if (self->models[i].texture == nullptr) continue;
+
         // Bind texture
         shader__set_uniform_texture(shader, "u_texture", self->models[i].texture);
 
@@ -100,32 +90,43 @@ void world__draw(world_t* self, SceneDesc_t const* scene) {
     glDisable(GL_DEPTH_TEST);
 }
 
-static bool build_world(world_t* self) {
-    SharedTexture_t** shared_texture_cache = nullptr;
-    auto main_world = self->world;
+static bool build_world_bsp_models(world_bsp_renderer_t* self) {
+    texture_t** texture_cache = nullptr;
 
     // Init model storage
-    self->models_len = main_world->m_pWorldBsp->m_nTextureNames;
-    self->models = SDL_calloc(self->models_len, sizeof(world_model_t));
+    self->models_len = self->world_bsp->m_nTextureNames;
+    self->models = SDL_calloc(self->models_len, sizeof(world_bsp_model_t));
     if (self->models == nullptr) {
         LOG_ERROR("Failed to alloc %zu world models", self->models_len);
         goto err;
     }
 
     // Init texture cache
-    shared_texture_cache = SDL_calloc(self->models_len, sizeof(shared_texture_t*));
-    if (shared_texture_cache == nullptr) {
+    auto textures = renderer__get_shared_textures();
+    texture_cache = SDL_calloc(self->models_len, sizeof(texture_t*));
+    if (texture_cache == nullptr) {
         LOG_ERROR("Failed to alloc shared texture cache (%zu entries)", self->models_len);
         goto err;
     }
-    for (size_t i = 0; i < main_world->m_pWorldBsp->m_nSurfaces; i++) {
-        auto surface = &main_world->m_pWorldBsp->m_Surfaces[i];
-        if (surface->m_iTexture >= self->models_len) {
-            LOG_ERROR("Weird surface texture");
+    for (size_t i = 0; i < self->world_bsp->m_nSurfaces; i++) {
+        auto surface = &self->world_bsp->m_Surfaces[i];
+        if (surface->m_iTexture >= self->world_bsp->m_nTextureNames) {
+            LOG_ERROR("Weird surface texture - aborting model build");
             goto err;
         }
+        if (surface->m_pTexture != nullptr) {
+            texture_cache[surface->m_iTexture] = shared_texture_manager__get_texture(textures, surface->m_pTexture);
+        } else {
+            texture_cache[surface->m_iTexture] = shared_texture_manager__get_texture_by_filename(
+                textures,
+                self->world_bsp->m_TextureNames[surface->m_iTexture]
+            );
+        }
 
-        shared_texture_cache[surface->m_iTexture] = surface->m_pTexture;
+        if (texture_cache[surface->m_iTexture] == nullptr) {
+            LOG_WARNING("Surface missing texture");
+            continue;
+        }
     }
 
     // Set up models
@@ -135,36 +136,38 @@ static bool build_world(world_t* self) {
             LOG_ERROR("Failed to init world model mesh");
             goto err;
         }
-        world_model->texture = shared_texture_manager__get_texture(self->textures, shared_texture_cache[i]);
+
+        if (texture_cache[i] == nullptr) continue;
+
+        world_model->texture = texture_cache[i];
         if (world_model->texture == nullptr) {
             LOG_ERROR("Failed to get texture for world model mesh");
             goto err;
         }
 
-        if (!build_world_model(self, i)) {
+        if (!build_world_bsp_model(self, i)) {
             LOG_ERROR("Failed to set up world model %zu", i);
             goto err;
         }
     }
 
-    SDL_free(shared_texture_cache);
-    shared_texture_cache = nullptr;
+    SDL_free(texture_cache);
+    texture_cache = nullptr;
 
     LOG_INFO("Loaded world with %zu models", self->models_len);
 
     return true;
 
 err:
-    SDL_free(shared_texture_cache);
+    SDL_free(texture_cache);
     return false;
 }
 
-static bool build_world_model(
-    world_t* self,
+static bool build_world_bsp_model(
+    world_bsp_renderer_t* self,
     size_t index
 ) {
-    auto bsp = self->world->m_pWorldBsp;
-    auto tessellator = self->tessellator;
+    auto tessellator = renderer__get_tessellator();
     auto world_model = &self->models[index];
 
     size_t num_vertices = 0;
@@ -172,8 +175,8 @@ static bool build_world_model(
     size_t num_indices = 0;
     index_t* indices = nullptr;
 
-    for (size_t i = 0; i < bsp->m_nPolies; i++) {
-        auto poly = bsp->m_Polies[i];
+    for (size_t i = 0; i < self->world_bsp->m_nPolies; i++) {
+        auto poly = self->world_bsp->m_Polies[i];
         if (poly->m_pSurface->m_iTexture != index) {
             continue;
         }

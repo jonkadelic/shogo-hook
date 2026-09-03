@@ -2,11 +2,11 @@
 
 #include <stddef.h>
 
-#include "./common.h"
-#include "./texture.h"
-#include "./shapes.h"
-#include "./blit_request.h"
-#include "./world.h"
+#include "lithtech/common.h"
+#include "lithtech/texture.h"
+#include "lithtech/shapes.h"
+#include "lithtech/blit_request.h"
+#include "lithtech/world.h"
 
 typedef struct SceneDesc SceneDesc_t;
 

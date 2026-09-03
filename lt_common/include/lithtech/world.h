@@ -3,13 +3,13 @@
 
 #include <stdint.h>
 
-#include "./shapes.h"
-#include "./texture.h"
-#include "./object.h"
+#include "lithtech/shapes.h"
+#include "lithtech/texture.h"
+#include "lithtech/object/object.h"
 
 typedef struct WorldData WorldData_t;
 typedef struct WorldBsp WorldBsp_t;
-typedef struct ObjectList ObjectList_t;
+typedef struct DObjectList DObjectList_t;
 typedef struct WorldPoly WorldPoly_t;
 typedef struct Leaf Leaf_t;
 typedef struct Node Node_t;
@@ -47,7 +47,7 @@ typedef struct Node {
     WorldBsp_t* m_pBsp;
     DVector_t m_vCenter;
     float m_fRadius;
-    ObjectList_t* m_pObjects;
+    DObjectList_t* m_pObjects;
     Node_t* m_Sides[2];
 } Node_t;
 static_assert(sizeof(Node_t) == 0x34);
@@ -228,7 +228,7 @@ typedef struct WorldBsp {
     uint32_t m_nPlanes;
     Node_t* m_Nodes;
     uint32_t m_nNodes;
-    ObjectList_t* m_WorldModels;
+    DObjectList_t* m_WorldModels;
     uint32_t m_nWorldModels;
     Surface_t* m_Surfaces;
     uint32_t m_nSurfaces;
@@ -240,7 +240,7 @@ typedef struct WorldBsp {
     uint32_t unk_3c;
     uint32_t unk_40;
     Node_t* m_RootNode;
-    ObjectList_t* m_WorldModelRoot;
+    DObjectList_t* m_WorldModelRoot;
     WorldPoly_t** m_Polies;
     uint32_t m_nPolies;
     DVertex_t* m_Points;
@@ -325,7 +325,7 @@ typedef struct MainWorld {
     int32_t unk_98;
     void* unk_9c;
     WorldData_t** m_pWorldModels;
-    uint32_t m_WorldModelCount;
+    uint32_t m_nWorldModels;
     int32_t unk_a8;
     MainWorld_t* unk_ac;
     void* unk_b0;
@@ -338,4 +338,4 @@ static_assert(offsetof(MainWorld_t, m_ExtentsMin) == 0x74);
 static_assert(offsetof(MainWorld_t, m_ExtentsMax) == 0x80);
 static_assert(offsetof(MainWorld_t, m_ExtentsNormal) == 0x8c);
 static_assert(offsetof(MainWorld_t, m_pWorldModels) == 0xa0);
-static_assert(offsetof(MainWorld_t, m_WorldModelCount) == 0xa4);
+static_assert(offsetof(MainWorld_t, m_nWorldModels) == 0xa4);

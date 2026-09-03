@@ -13,7 +13,7 @@
 #include "render/shared_textures.h"
 #include "render/rsurfaces.h"
 #include "render/tessellator.h"
-#include "render/world.h"
+#include "render/world/world_renderer.h"
 #include "shaders/shaders.h"
 
 typedef struct renderer {
@@ -35,9 +35,8 @@ typedef struct renderer {
     pixel_buffer_t backbuffer;
     screen_t screen;
     RenderContext_t* render_context;
-    world_t* world;
+    world_renderer_t* world;
     
-
     struct {
         DVector_t pos;
         DRotation_t rotation;

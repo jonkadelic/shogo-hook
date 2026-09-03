@@ -1,6 +1,6 @@
 #pragma once
 
-#include "./common.h"
+#include "lithtech/common.h"
 
 typedef struct DRect {
     int32_t left;
@@ -38,3 +38,9 @@ typedef struct DRotation {
 static_assert(sizeof(DRotation_t) == 0x10);
 static_assert(offsetof(DRotation_t, m_Vec) == 0x00);
 static_assert(offsetof(DRotation_t, m_Spin) == 0x0c);
+
+typedef struct DMatrix {
+    float m[4][4];
+} DMatrix_t;
+static_assert(sizeof(DMatrix_t) == 0x40);
+static_assert(offsetof(DMatrix_t, m) == 0x00);

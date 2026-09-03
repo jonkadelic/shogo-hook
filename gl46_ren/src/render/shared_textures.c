@@ -36,27 +36,64 @@ texture_t* shared_texture_manager__get_texture(shared_texture_manager_t* self, S
         return nullptr;
     }
 
-    uint64_t path_hash = hash__fnv1a_64(FNV1_64A_INIT, strlen(lt_texture->m_pFile->m_Filename), lt_texture->m_pFile->m_Filename);
+    char* path_upper = SDL_strdup(lt_texture->m_pFile->m_Filename);
+    if (path_upper == nullptr) {
+        LOG_ERROR("Failed to alloc uppercase string");
+    }
+    SDL_strupr(path_upper);
+
+    uint64_t path_hash = hash__fnv1a_64(FNV1_64A_INIT, SDL_strlen(path_upper), path_upper);
     uint64_t const* path_hash_ptr = &path_hash;
     shared_texture_t** texture_ptr = SDL_bsearch(&path_hash_ptr, self->textures, self->textures_len, sizeof(shared_texture_t*), compare_textures_by_hash);
     shared_texture_t* texture = texture_ptr != nullptr ? *texture_ptr : nullptr;
     if (texture == nullptr) {
         auto texture_data = RENDER_STRUCT->GetTexture(lt_texture, 0);
         if (texture_data == nullptr) {
-            LOG_WARNING("Failed to read texture data for shared texture at \"%s\"", lt_texture->m_pFile->m_Filename);
-            return nullptr;
+            LOG_WARNING("Failed to read texture data for shared texture at \"%s\"", path_upper);
+            goto err;
         }
 
         texture = create_texture(self, texture_data, path_hash);
         RENDER_STRUCT->FreeTexture(lt_texture);
         if (texture == nullptr) {
             LOG_ERROR("Failed to create new shared texture");
-            return nullptr;
+            goto err;
         }
     }
 
+    SDL_free(path_upper);
+
     SDL_assert(texture != nullptr);
     return &texture->texture;
+
+err:
+    SDL_free(path_upper);
+    return nullptr;
+}
+
+texture_t* shared_texture_manager__get_texture_by_filename(shared_texture_manager_t* self, char const* filename) {
+    char* path_upper = SDL_strdup(filename);
+    if (path_upper == nullptr) {
+        LOG_ERROR("Failed to alloc uppercase string");
+    }
+    SDL_strupr(path_upper);
+
+    uint64_t path_hash = hash__fnv1a_64(FNV1_64A_INIT, SDL_strlen(path_upper), path_upper);
+    uint64_t const* path_hash_ptr = &path_hash;
+    shared_texture_t** texture_ptr = SDL_bsearch(&path_hash_ptr, self->textures, self->textures_len, sizeof(shared_texture_t*), compare_textures_by_hash);
+    shared_texture_t* texture = texture_ptr != nullptr ? *texture_ptr : nullptr;
+    if (texture == nullptr) {
+        LOG_WARNING("Tried to get non-loaded texture at \"%s\"", path_upper);
+        goto err;
+    }
+
+    SDL_free(path_upper);
+
+    return &texture->texture;
+
+err:
+    SDL_free(path_upper);
+    return nullptr;
 }
 
 static int compare_textures_by_hash(void const* a, void const* b) {

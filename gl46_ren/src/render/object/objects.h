@@ -4,14 +4,14 @@
 
 #include <lithtech/lithtech.h>
 
-#include "render/object/polygrid.h"
+#include "render/object/object_polygrid.h"
 
 typedef struct object_data {
     uint16_t object_id;
     ObjectType_t object_type;
     uint64_t last_used;
     union {
-        polygrid_t as_polygrid;
+        object_polygrid_t as_polygrid;
     }; 
 } object_data_t;
 

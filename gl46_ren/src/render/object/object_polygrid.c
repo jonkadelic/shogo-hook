@@ -1,11 +1,11 @@
-#include "./polygrid.h"
+#include "./object_polygrid.h"
 
 #include "logger.h"
-#include "objects.h"
+#include "render/object/objects.h"
 #include "renderer.h"
 #include "shaders/shaders.h"
 
-void polygrid__draw(object_data_t* self, tessellator_t* tessellator, DObject_t const* object) {
+void object_polygrid__draw(object_data_t* self, tessellator_t* tessellator, DObject_t const* object) {
     auto polygrid = (PolyGrid_t const*) object;
     auto polygrid_data = &self->as_polygrid;
 
@@ -130,15 +130,15 @@ void polygrid__draw(object_data_t* self, tessellator_t* tessellator, DObject_t c
     mesh__draw(&polygrid_data->mesh);
 }
 
-void polygrid__cleanup(object_data_t* self) {
-    polygrid_t* polygrid = &self->as_polygrid;
+void object_polygrid__cleanup(object_data_t* self) {
+    object_polygrid_t* polygrid_data = &self->as_polygrid;
 
-    mesh__cleanup(&polygrid->mesh);
-    polygrid->mesh_init = false;
+    mesh__cleanup(&polygrid_data->mesh);
+    polygrid_data->mesh_init = false;
 
-    glDeleteBuffers(1, &polygrid->gl_offsets_ssbo);
-    polygrid->gl_offsets_ssbo = 0;
+    glDeleteBuffers(1, &polygrid_data->gl_offsets_ssbo);
+    polygrid_data->gl_offsets_ssbo = 0;
 
-    polygrid->width = 0;
-    polygrid->height = 0;
+    polygrid_data->width = 0;
+    polygrid_data->height = 0;
 }

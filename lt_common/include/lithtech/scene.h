@@ -1,9 +1,9 @@
 #pragma once
 
-#include "./common.h"
-#include "./shapes.h"
-#include "./object.h"
-#include "./render.h"
+#include "lithtech/common.h"
+#include "lithtech/shapes.h"
+#include "lithtech/object/object.h"
+#include "lithtech/render.h"
 
 typedef struct SkyDef {
     DVector_t m_Min;

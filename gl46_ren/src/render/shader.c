@@ -216,6 +216,8 @@ void shader__bind(shader_t const* self) {
 }
 
 void shader__set_uniform_texture(shader_t const* self, char const* name, texture_t const* texture) {
+    if (texture == nullptr) return;
+    
     shader__set_uniform_texture_raw(self, name, texture->gl_texture);
 }
 

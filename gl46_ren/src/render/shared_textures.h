@@ -18,3 +18,4 @@ bool shared_texture_manager__init(shared_texture_manager_t* self);
 void shared_texture_manager__cleanup(shared_texture_manager_t* self);
 
 texture_t* shared_texture_manager__get_texture(shared_texture_manager_t* self, SharedTexture_t* lt_texture);
+texture_t* shared_texture_manager__get_texture_by_filename(shared_texture_manager_t* self, char const* filename);

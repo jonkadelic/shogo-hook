@@ -9,7 +9,6 @@
 #include "logger.h"
 #include "render/blitter.h"
 #include "render/object/objects.h"
-#include "render/render_api.h"
 #include "shaders/shaders.h"
 
 #define TARGET_FPS (60)
@@ -179,7 +178,7 @@ void renderer__cleanup(void) {
 
 void renderer__reset(void) {
     if (RENDERER.world != nullptr) {
-        world__cleanup(RENDERER.world);
+        world_renderer__cleanup(RENDERER.world);
         SDL_free(RENDERER.world);
         RENDERER.world = nullptr;
     }

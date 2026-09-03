@@ -25,8 +25,8 @@ typedef struct object_vtable {
 
 static object_vtable_t const OBJECT_VTABLE[NumObjectTypes] = {
     [ObjectType_PolyGrid] = {
-        .draw = polygrid__draw,
-        .cleanup = polygrid__cleanup,
+        .draw = object_polygrid__draw,
+        .cleanup = object_polygrid__cleanup,
     }
 };
 
@@ -83,6 +83,25 @@ void object_manager__update(object_manager_t* self) {
 
 void object_manager__draw(object_manager_t* self, DObject_t const* object) {
     uint16_t const* object_id = &object->m_ObjectID;
+
+    static char const* const NAMES[] = {
+        "Normal",
+        "Model",
+        "WorldModel",
+        "Sprite",
+        "Light",
+        "Camera",
+        "ParticleSystem",
+        "PolyGrid",
+        "LineSystem",
+        "Container",
+    };
+
+    // LOG_INFO("Drawing object of type %s", NAMES[object->m_ObjectType]);
+
+    if (OBJECT_VTABLE[object->m_ObjectType].draw == nullptr) {
+        return;
+    }
 
     object_data_t** object_data_ptr = SDL_bsearch(
         &object_id,
