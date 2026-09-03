@@ -183,9 +183,6 @@ void __cdecl r_SwapBuffers(void) {
 
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
-        if (event.type == SDL_EVENT_TERMINATING) {
-            PostQuitMessage(0);
-        }
     }
 
     renderer__swap_buffers();
@@ -211,33 +208,35 @@ void* __cdecl r_CreateSurface(int32_t width, int32_t height) {
         return nullptr;
     }
 
-    return rsurface_manager__create_rsurface(rsurfaces, width, height);
+    return (void*) rsurface_manager__create_rsurface(rsurfaces, width, height);
 }
 
 void __cdecl r_DeleteSurface(void* pSurface) {
     LOG_FUNC();
 
-    if (pSurface == nullptr) {
-        return;
-    }
+    rsurface_id_t id = (rsurface_id_t) pSurface;
+    if (id == RSURFACE_ID_INVALID) return;
 
-    auto rsurface = (rsurface_t*) pSurface;
     auto rsurfaces = renderer__get_rsurfaces();
     if (rsurfaces == nullptr) {
         return;
     }
 
-    rsurface_manager__delete_rsurface(rsurfaces, rsurface->idx);
+    rsurface_manager__delete_rsurface(rsurfaces, id);
 }
 
 void __cdecl r_GetSurfaceInfo(void* pSurface, int32_t* pWidth, int32_t* pHeight, int32_t* pPitchBytes) {
     LOG_FUNC();
 
-    if (pSurface == nullptr) {
+    rsurface_id_t id = (rsurface_id_t) pSurface;
+    if (id == RSURFACE_ID_INVALID) return;
+
+    auto rsurfaces = renderer__get_rsurfaces();
+    if (rsurfaces == nullptr) {
         return;
     }
 
-    auto rsurface = (rsurface_t*) pSurface;
+    auto rsurface = rsurface_manager__get_rsurface(rsurfaces, id);
 
     if (pWidth != nullptr) {
         *pWidth = rsurface->width;
@@ -253,12 +252,16 @@ void __cdecl r_GetSurfaceInfo(void* pSurface, int32_t* pWidth, int32_t* pHeight,
 void* __cdecl r_LockSurface(void* pSurface) {
     LOG_FUNC();
 
-    if (pSurface == nullptr) {
+    rsurface_id_t id = (rsurface_id_t) pSurface;
+    if (id == RSURFACE_ID_INVALID) return nullptr;
+
+    auto rsurfaces = renderer__get_rsurfaces();
+    if (rsurfaces == nullptr) {
         return nullptr;
     }
 
-    auto rsurface = (rsurface_t*) pSurface;
-    if (rsurface->locked) {
+    auto rsurface = rsurface_manager__get_rsurface(rsurfaces, id);
+    if (rsurface == nullptr) {
         return nullptr;
     }
 
@@ -269,12 +272,17 @@ void* __cdecl r_LockSurface(void* pSurface) {
 void __cdecl r_UnlockSurface(void* pSurface) {
     LOG_FUNC();
 
-    if (pSurface == nullptr) {
-        return;
-    }
+    // crashes on exit if rsurface->locked == true - why?
+    // rsurface_id_t id = (rsurface_id_t) pSurface;
+    // if (id == RSURFACE_ID_INVALID) return;
 
-    auto rsurface = (rsurface_t*) pSurface;
-    rsurface->locked = false;
+    // auto rsurfaces = renderer__get_rsurfaces();
+    // if (rsurfaces == nullptr) {
+    //     return;
+    // }
+
+    // auto rsurface = rsurface_manager__get_rsurface(rsurfaces, id);
+    // rsurface->locked = false;
 }
 
 DBOOL __cdecl r_OptimizeSurface(void* pSurface, uint32_t transparentColor) {

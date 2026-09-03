@@ -1,6 +1,6 @@
 #include "./logger.h"
 
-#include <minwindef.h>
+#include <windows.h>
 #include <stdio.h>
 
 #include <SDL3/SDL.h>

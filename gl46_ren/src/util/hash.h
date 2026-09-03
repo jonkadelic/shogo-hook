@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stddef.h>
 #include <stdint.h>
 
 #define FNV1_32A_INIT   ((uint32_t) 0x811c9dc5)

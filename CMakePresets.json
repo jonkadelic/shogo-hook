@@ -25,9 +25,6 @@
     }
   ],
   "buildPresets": [
-    {
-      "name": "mingw-x86",
-      "configurePreset": "mingw-x86"
-    }
+    { "name": "mingw-x86", "configurePreset": "mingw-x86" }
   ]
 }

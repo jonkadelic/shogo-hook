@@ -1,7 +1,7 @@
 #pragma once
 
 #include <setjmp.h>
-#include <windef.h>
+#include <windows.h>
 
 typedef struct ClientGlob {
     BOOL m_bProcessWindowMessages;

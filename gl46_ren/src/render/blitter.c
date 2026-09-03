@@ -1,5 +1,6 @@
 #include "./blitter.h"
 
+#include "renderer.h"
 #include "util/util.h"
 #include "logger.h"
 
@@ -66,10 +67,18 @@ void blitter__blit_request(blitter_t* self, BlitRequest_t const* request) {
         return;
     }
 
-    rsurface_t* rsurface = request->m_pSurface;
+    rsurface_id_t id = (rsurface_id_t) request->m_pSurface;
     DRect_t const* dest = request->m_pDestRect;
 
-    rsurface__update_texture(rsurface,
+    auto rsurfaces = renderer__get_rsurfaces();
+    if (rsurfaces == nullptr) {
+        return;
+    }
+
+    auto rsurface = rsurface_manager__get_rsurface(rsurfaces, id);
+
+    rsurface_manager__update_texture(rsurfaces,
+        id,
         (request->m_BlitOptions & BlitRequestOptions_Transparent) != 0,
         request->m_TransparentColor
     );

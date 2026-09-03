@@ -4,8 +4,8 @@
 #define FNV_64_PRIME ((uint64_t) 0x100000001b3ULL)
 
 uint32_t hash__fnv1a_32(uint32_t init, size_t buffer_len, void const* buffer) {
-    uint8_t* bp = buffer;
-    uint8_t* be = bp + buffer_len;
+    uint8_t const* bp = buffer;
+    uint8_t const* be = bp + buffer_len;
 
     while (bp < be) {
         init ^= (uint32_t) *bp++;

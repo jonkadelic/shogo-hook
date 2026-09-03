@@ -1,7 +1,7 @@
 #include "./blit.h"
 
 #include <assert.h>
-#include <minwindef.h>
+#include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
 

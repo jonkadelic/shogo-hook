@@ -45,6 +45,7 @@ STDMETHODIMP ddraw_GetDeviceIdentifier(THIS_ LPDDDEVICEIDENTIFIER, DWORD ) PURE;
 bool ddraw_iface__init(ddraw_iface_t* self, renderer_t* renderer) {
     OBJECT_ZERO_INIT(self);
 
+    self->rc = 1;
     self->base.lpVtbl = &self->vtable;
     self->vtable = (IDirectDraw4Vtbl) {
         .QueryInterface = ddraw_QueryInterface,

@@ -92,7 +92,7 @@ void polygrid__draw(object_data_t* self, tessellator_t* tessellator, DObject_t c
     HMM_Mat4 projection_matrix = renderer__get_view_projection_matrix();
 
     // translation * rotation * scale
-    HMM_Mat4 model_matrix = HMM_Translate(HMM_V3(object->m_Pos.x, object->m_Pos.y, -object->m_Pos.z));
+    HMM_Mat4 model_matrix = HMM_Translate(HMM_V3(object->m_Pos.x, object->m_Pos.y, object->m_Pos.z));
     model_matrix = HMM_MulM4(
         model_matrix,
         HMM_QToM4(HMM_Q(object->m_Rotation.m_Vec.x, object->m_Rotation.m_Vec.y, object->m_Rotation.m_Vec.z, object->m_Rotation.m_Spin))
@@ -103,7 +103,7 @@ void polygrid__draw(object_data_t* self, tessellator_t* tessellator, DObject_t c
     );
     model_matrix = HMM_MulM4(
         model_matrix,
-        HMM_Translate(HMM_V3((polygrid->m_Width - 1) * 0.5f, 0.0f, (polygrid->m_Height - 1) * -0.5f))
+        HMM_Translate(HMM_V3((polygrid->m_Width - 1) * -0.5f, 0.0f, (polygrid->m_Height - 1) * -0.5f))
     );
 
     // Bind shader

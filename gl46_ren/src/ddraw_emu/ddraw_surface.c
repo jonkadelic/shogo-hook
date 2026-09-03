@@ -62,6 +62,7 @@ STDMETHODIMP dsurface_ChangeUniquenessValue(THIS) PURE;
 bool ddraw_surface__init(ddraw_surface_t* self, ddraw_iface_t* iface, LPDDSURFACEDESC2 desc) {
     OBJECT_ZERO_INIT(self);
 
+    self->rc = 1;
     self->base.lpVtbl = &self->vtable;
     self->vtable = (IDirectDrawSurface4Vtbl) {
         .QueryInterface = dsurface_QueryInterface,
@@ -192,7 +193,7 @@ STDMETHODIMP_(ULONG) dsurface_Release (THIS) PURE {
     auto self = (ddraw_surface_t*) This;
     auto new_rc = --self->rc;
 
-    if (new_rc <= 0) {
+    if (new_rc == 0) {
         ddraw_surface__cleanup(self);
         SDL_free(self);
     }

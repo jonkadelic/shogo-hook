@@ -23,6 +23,8 @@ static inline uint32_t color_format__get_bpp(color_format_t self) {
             SDL_assert(false);
         }
     }
+
+    return 0;
 }
 
 static inline uint32_t color_format__convert_color(color_format_t src, color_format_t target, uint32_t value) {
