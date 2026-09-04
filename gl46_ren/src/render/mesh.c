@@ -8,8 +8,10 @@
 
 static GLuint GL_EMPTY_VAO = 0;
 
-bool mesh__init(mesh_t* self) {
+bool mesh__init(mesh_t* self, size_t vertex_size) {
     OBJECT_ZERO_INIT(self);
+
+    self->vertex_size = vertex_size;
 
     if (GL_EMPTY_VAO == 0) {
         glGenVertexArrays(1, &GL_EMPTY_VAO);
@@ -47,7 +49,7 @@ void mesh__cleanup(mesh_t* self) {
 
 void mesh__upload(
     mesh_t* self,
-    size_t num_vertices, vertex_t const vertices[static num_vertices],
+    size_t num_vertices, void const* vertices,
     size_t num_indices, index_t const indices[static num_indices]
 ) {
     mesh__upload_with_usage(
@@ -60,13 +62,13 @@ void mesh__upload(
 
 void mesh__upload_with_usage(
     mesh_t* self,
-    size_t num_vertices, vertex_t const vertices[static num_vertices],
+    size_t num_vertices, void const* vertices,
     size_t num_indices, index_t const indices[static num_indices],
     GLenum usage
 ) {
     SDL_assert(self->gl_vertices_ssbo != 0 && self->gl_indices_ssbo != 0);
 
-    glNamedBufferData(self->gl_vertices_ssbo, num_vertices * sizeof(vertex_t), vertices, usage);
+    glNamedBufferData(self->gl_vertices_ssbo, num_vertices * self->vertex_size, vertices, usage);
     glNamedBufferData(self->gl_indices_ssbo, num_indices * sizeof(index_t), indices, usage);
     self->index_count = num_indices;
 }

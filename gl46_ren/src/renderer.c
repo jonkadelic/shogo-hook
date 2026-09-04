@@ -98,8 +98,14 @@ bool renderer__init(RMode_t const* rmode, void* hwnd) {
     }
 
     // Init tessellator
-    if (!tessellator__init(&RENDERER.tessellator)) {
+    if (!tessellator__init(&RENDERER.tessellator, sizeof(vertex_t))) {
         LOG_FATAL("Failed to init tessellator");
+        goto err;
+    }
+
+    // Init model tessellator
+    if (!tessellator__init(&RENDERER.model_tessellator, sizeof(model_vertex_t))) {
+        LOG_FATAL("Failed to init model tessellator");
         goto err;
     }
 
@@ -292,6 +298,10 @@ rsurface_manager_t* renderer__get_rsurfaces(void) {
 
 tessellator_t* renderer__get_tessellator(void) {
     return &RENDERER.tessellator;
+}
+
+tessellator_t* renderer__get_model_tessellator(void) {
+    return &RENDERER.model_tessellator;
 }
 
 shader_t const* renderer__get_shaders(void) {

@@ -10,7 +10,7 @@ bool blitter__init(blitter_t* self, size_t width, size_t height, rsurface_manage
     self->rsurfaces = rsurfaces;
     self->shader = shader;
 
-    if (!mesh__init(&self->mesh)) {
+    if (!mesh__init(&self->mesh, sizeof(vertex_t))) {
         LOG_ERROR("Failed to init mesh");
         goto err;
     }

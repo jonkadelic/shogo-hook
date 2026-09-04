@@ -7,6 +7,7 @@ typedef enum shader_id {
     SHADER_ID__POLYGRID,
     SHADER_ID__SCREEN,
     SHADER_ID__WORLD,
+    SHADER_ID__MODEL,
     NUM_SHADER_IDS,
 } shader_id_t;
 

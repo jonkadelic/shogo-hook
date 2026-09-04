@@ -7,7 +7,7 @@
 bool screen__init(screen_t* self, size_t width, size_t height) {
     OBJECT_ZERO_INIT(self);
 
-    if (!mesh__init(&self->mesh)) {
+    if (!mesh__init(&self->mesh, sizeof(vertex_t))) {
         LOG_ERROR("Failed to init screen mesh");
         goto err;
     }

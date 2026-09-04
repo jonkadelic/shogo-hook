@@ -52,6 +52,19 @@ shader_def_t const SHADER_DEFS[] = {
                 , '\0'
             }
         }
-    }
+    },
+    [SHADER_ID__MODEL] = (shader_def_t) {
+        .name = "model",
+        .shader_srcs = {
+            [SHADER_SRC_TYPE__VERTEX] = (char const[]) {
+                #embed "model.vert"
+                , '\0'
+            },
+            [SHADER_SRC_TYPE__FRAGMENT] = (char const[]) {
+                #embed "model.frag"
+                , '\0'
+            }
+        }
+    },
 };
 static_assert(sizeof(SHADER_DEFS) / sizeof(shader_def_t) == NUM_SHADER_IDS);

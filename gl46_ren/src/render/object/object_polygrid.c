@@ -13,7 +13,7 @@ void object_polygrid__draw(object_data_t* self, SceneDesc_t const* scene_desc, D
 
     // If mesh doesn't exist, init mesh
     if (!data->mesh_init) {
-        if (!mesh__init(&data->mesh)) {
+        if (!mesh__init(&data->mesh, sizeof(vertex_t))) {
             LOG_ERROR("Failed to init polygrid mesh");
             return;
         }

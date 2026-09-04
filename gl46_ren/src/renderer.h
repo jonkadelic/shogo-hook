@@ -28,6 +28,7 @@ typedef struct renderer {
 
     rsurface_manager_t rsurfaces;
     tessellator_t tessellator;
+    tessellator_t model_tessellator;
     shader_t shaders[NUM_SHADER_IDS];
     blitter_t blitter;
     object_manager_t objects;
@@ -74,6 +75,7 @@ HMM_Mat4 renderer__get_view_projection_matrix(void);
 
 rsurface_manager_t* renderer__get_rsurfaces(void);
 tessellator_t* renderer__get_tessellator(void);
+tessellator_t* renderer__get_model_tessellator(void);
 shader_t const* renderer__get_shaders(void);
 blitter_t* renderer__get_blitter(void);
 shared_texture_manager_t* renderer__get_shared_textures(void);

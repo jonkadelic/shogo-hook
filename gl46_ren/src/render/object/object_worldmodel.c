@@ -25,13 +25,8 @@ void object_worldmodel__draw(object_data_t* self, SceneDesc_t const* scene_desc,
         data->renderer_init = true;
     }
 
-    HMM_Mat4 model_matrix;
-    for (size_t row = 0; row < 4; row++) {
-        for (size_t column = 0; column < 4; column++) {
-            model_matrix.Elements[column][row] =
-                worldmodel->m_Transform.m[row][column];
-        }
-    }
+    static_assert(sizeof(HMM_Mat4) == sizeof(DMatrix_t));
+    HMM_Mat4 model_matrix = HMM_TransposeM4(*(HMM_Mat4*) &worldmodel->m_Transform);
     
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

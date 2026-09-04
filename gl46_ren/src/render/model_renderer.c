@@ -4,6 +4,8 @@
 #include "renderer.h"
 #include "util/util.h"
 
+static bool update_node_matrices(GLuint ssbo, ModelInstance_t const* model_instance);
+
 bool model_renderer__init(model_renderer_t* self, ModelInstance_t const* model_instance) {
     OBJECT_ZERO_INIT(self);
 
@@ -38,12 +40,12 @@ bool model_renderer__init(model_renderer_t* self, ModelInstance_t const* model_i
         goto err;
     }
 
-    auto t = renderer__get_tessellator();
-    vertex_t vertices[3];
+    auto t = renderer__get_model_tessellator();
+    model_vertex_t vertices[3];
     index_t indices[3];
 
     // temp
-    if (!mesh__init(&self->meshes[0])) {
+    if (!mesh__init(&self->meshes[0], sizeof(model_vertex_t))) {
         LOG_ERROR("Failed to init mesh");
         goto err;
     }
@@ -68,6 +70,8 @@ bool model_renderer__init(model_renderer_t* self, ModelInstance_t const* model_i
             vertices[j].uv[0] = face_uvs[WIND_ARRAY[j] * 2 + 0];
             vertices[j].uv[1] = face_uvs[WIND_ARRAY[j] * 2 + 1];
 
+            vertices[j].node_idx = vertex->m_NodeIndex;
+
             indices[j] = t->indices_len + j;
         }
 
@@ -77,6 +81,14 @@ bool model_renderer__init(model_renderer_t* self, ModelInstance_t const* model_i
 
     tessellator__upload_and_reset(t, &self->meshes[0]);
 
+    glCreateBuffers(1, &self->gl_node_matrix_ssbo);
+    if (self->gl_node_matrix_ssbo == 0) {
+        LOG_ERROR("Failed to init node transform SSBO");
+        goto err;
+    }
+
+    update_node_matrices(self->gl_node_matrix_ssbo, model_instance);
+
     return true;
 
 err:
@@ -85,6 +97,8 @@ err:
 }
 
 void model_renderer__cleanup(model_renderer_t* self) {
+    glDeleteBuffers(1, &self->gl_node_matrix_ssbo);
+
     for (size_t i = 0; i < self->num_meshes; i++) {
         mesh__cleanup(&self->meshes[i]);
     }
@@ -94,6 +108,8 @@ void model_renderer__cleanup(model_renderer_t* self) {
 
 void model_renderer__draw(model_renderer_t* self, ModelInstance_t const* model_instance) {
     auto object = &model_instance->base;
+
+    update_node_matrices(self->gl_node_matrix_ssbo, model_instance);
 
     HMM_Mat4 projection_matrix = renderer__get_view_projection_matrix();
     HMM_Mat4 model_matrix = HMM_Translate(HMM_V3(object->m_Pos.x, object->m_Pos.y, object->m_Pos.z));
@@ -106,7 +122,7 @@ void model_renderer__draw(model_renderer_t* self, ModelInstance_t const* model_i
         HMM_Scale(HMM_V3(object->m_Scale.x, object->m_Scale.y, object->m_Scale.z))
     );
 
-    shader_t const* shader = &renderer__get_shaders()[SHADER_ID__WORLD];
+    shader_t const* shader = &renderer__get_shaders()[SHADER_ID__MODEL];
 
     shader__bind(shader);
 
@@ -116,6 +132,9 @@ void model_renderer__draw(model_renderer_t* self, ModelInstance_t const* model_i
 
     glEnable(GL_DEPTH_TEST);
 
+    // Bind matrix SSBO
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, self->gl_node_matrix_ssbo);
+
     // Draw meshes
     for (size_t i = 0; i < self->num_meshes; i++) {
         // Draw mesh
@@ -123,4 +142,41 @@ void model_renderer__draw(model_renderer_t* self, ModelInstance_t const* model_i
     }
 
     glDisable(GL_DEPTH_TEST);
+}
+
+static bool update_node_matrices(GLuint ssbo, ModelInstance_t const* model_instance) {
+    SDL_assert(model_instance->m_pModelData->m_nNodeMatrices == model_instance->m_pModelData->m_nNodes);
+
+    static_assert(sizeof(HMM_Mat4) == sizeof(float[16]));
+    HMM_Mat4* matrix_data = SDL_calloc(1, sizeof(HMM_Mat4) * model_instance->m_pModelData->m_nNodeMatrices);
+    if (matrix_data == nullptr) {
+        LOG_ERROR("Failed to alloc %zu matrices", model_instance->m_pModelData->m_nNodeMatrices);
+        return false;
+    }
+
+    HMM_Mat4 handedness = HMM_Scale(HMM_V3(1.0f, 1.0f, -1.0f));
+
+    for (size_t i = 0; i < model_instance->m_pModelData->m_nNodeMatrices; i++) {
+        auto in_matrix = &model_instance->m_pModelData->m_pNodeMatrices[i];
+        auto out_matrix = &matrix_data[i];
+
+        static_assert(sizeof(*in_matrix) == sizeof(*out_matrix));
+        *out_matrix = HMM_TransposeM4(*(HMM_Mat4*) in_matrix);
+        *out_matrix = HMM_MulM4(
+            HMM_MulM4(handedness, *out_matrix),
+            handedness
+        );
+    }
+
+    // We now have a buffer of matrix data. Let's upload it:
+    glNamedBufferData(
+        ssbo,
+        sizeof(float[16]) * model_instance->m_pModelData->m_nNodeMatrices,
+        matrix_data,
+        GL_STREAM_DRAW
+    );
+
+    SDL_free(matrix_data);
+
+    return true;
 }

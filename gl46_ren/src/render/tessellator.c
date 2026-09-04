@@ -8,8 +8,10 @@
 #define VERTEX_ALLOC_LEN    (4)
 #define INDEX_ALLOC_LEN     (4)
 
-bool tessellator__init(tessellator_t* self) {
+bool tessellator__init(tessellator_t* self, size_t vertex_size) {
     OBJECT_ZERO_INIT(self);
+
+    self->vertex_size = vertex_size;
 
     return true;
 }
@@ -19,16 +21,16 @@ void tessellator__cleanup(tessellator_t* self) {
     SDL_free(self->vertices); self->vertices = nullptr;
 }
 
-void tessellator__append_vertex(tessellator_t* self, vertex_t const* vertex) {
+void tessellator__append_vertex(tessellator_t* self, void const* vertex) {
     tessellator__append_vertices(self, 1, vertex);
 }
 
-void tessellator__append_vertices(tessellator_t* self, size_t num_vertices, vertex_t const vertices[static num_vertices]) {
+void tessellator__append_vertices(tessellator_t* self, size_t num_vertices, void const* vertices) {
     // Ensure buffer is large enough to fit new vertices
     size_t vertex_index = self->vertices_len;
     if (self->vertices_capacity < self->vertices_len + num_vertices) {
         size_t new_vertices_capacity = self->vertices_capacity + SDL_max(VERTEX_ALLOC_LEN, num_vertices);
-        vertex_t* new_vertices = SDL_realloc(self->vertices, sizeof(vertex_t) * new_vertices_capacity);
+        void* new_vertices = SDL_realloc(self->vertices, self->vertex_size * new_vertices_capacity);
         if (new_vertices == nullptr) {
             LOG_ERROR("Failed to allocate %zu vertices in tessellator.", new_vertices_capacity);
             return;
@@ -38,8 +40,13 @@ void tessellator__append_vertices(tessellator_t* self, size_t num_vertices, vert
         self->vertices = new_vertices;
     }
 
+    // note - this doesn't need to be a loop - fix later
     for (size_t i = 0; i < num_vertices; i++) {
-        self->vertices[vertex_index + i] = vertices[i];
+        SDL_memcpy(
+            self->vertices + (self->vertex_size * (vertex_index + i)),
+            vertices + (self->vertex_size * i),
+            self->vertex_size
+        );
     }
 
     self->vertices_len += num_vertices;

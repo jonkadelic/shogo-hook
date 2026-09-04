@@ -9,7 +9,7 @@
 #include "render/tessellator.h"
 #include "util/util.h"
 
-#define OBJECT_TIMEOUT  (30 * 1000) // 30 seconds
+#define OBJECT_TIMEOUT  (1 * 1000) // 1 second
 
 #define OBJECT_DATA_ALLOC_LEN   (4)
 

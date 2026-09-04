@@ -5,17 +5,18 @@
 #include "render/mesh.h"
 
 typedef struct tessellator {
+    size_t vertex_size;
     size_t vertices_len, vertices_capacity;
-    vertex_t* vertices;
+    void* vertices;
     size_t indices_len, indices_capacity;
     index_t* indices;
 } tessellator_t;
 
-bool tessellator__init(tessellator_t* self);
+bool tessellator__init(tessellator_t* self, size_t vertex_size);
 void tessellator__cleanup(tessellator_t* self);
 
-void tessellator__append_vertex(tessellator_t* self, vertex_t const* vertex);
-void tessellator__append_vertices(tessellator_t* self, size_t num_vertices, vertex_t const vertices[static num_vertices]);
+void tessellator__append_vertex(tessellator_t* self, void const* vertex);
+void tessellator__append_vertices(tessellator_t* self, size_t num_vertices, void const* vertices);
 void tessellator__append_index(tessellator_t* self, index_t index);
 void tessellator__append_indices(tessellator_t* self, size_t num_indices, index_t const indices[static num_indices]);
 

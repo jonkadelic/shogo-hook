@@ -131,7 +131,7 @@ static bool build_world_bsp_models(world_bsp_renderer_t* self) {
     // Set up models
     for (size_t i = 0; i < self->models_len; i++) {
         auto world_model = &self->models[i];
-        if (!mesh__init(&world_model->mesh)) {
+        if (!mesh__init(&world_model->mesh, sizeof(vertex_t))) {
             LOG_ERROR("Failed to init world model mesh");
             goto err;
         }
