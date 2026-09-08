@@ -7,6 +7,7 @@
 #include "ddraw_emu/ddraw_backbuffer.h"
 #include "ddraw_emu/ddraw_iface.h"
 #include "render/blitter.h"
+#include "render/models.h"
 #include "render/object/objects.h"
 #include "render/screen.h"
 #include "render/shader.h"
@@ -33,6 +34,8 @@ typedef struct renderer {
     blitter_t blitter;
     object_manager_t objects;
     shared_texture_manager_t shared_textures;
+    model_manager_t models;
+
     pixel_buffer_t backbuffer;
     screen_t screen;
     RenderContext_t* render_context;
@@ -79,3 +82,4 @@ tessellator_t* renderer__get_model_tessellator(void);
 shader_t const* renderer__get_shaders(void);
 blitter_t* renderer__get_blitter(void);
 shared_texture_manager_t* renderer__get_shared_textures(void);
+model_manager_t* renderer__get_models(void);

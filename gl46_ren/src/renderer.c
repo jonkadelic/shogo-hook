@@ -135,6 +135,12 @@ bool renderer__init(RMode_t const* rmode, void* hwnd) {
         goto err;
     }
 
+    // Init model manager
+    if (!model_manager__init(&RENDERER.models)) {
+        LOG_FATAL("Failed to init model manager");
+        goto err;
+    }
+
     // Init backbuffer
     if (!pixel_buffer__init_backbuffer(&RENDERER.backbuffer)) {
         LOG_FATAL("Failed to init backbuffer pixel buffer");
@@ -190,6 +196,7 @@ void renderer__reset(void) {
         RENDERER.world = nullptr;
     }
 
+    model_manager__cleanup(&RENDERER.models);
     shared_texture_manager__cleanup(&RENDERER.shared_textures);
 
     object_manager__cleanup(&RENDERER.objects);
@@ -200,6 +207,7 @@ void renderer__reset(void) {
         shader__cleanup(&RENDERER.shaders[i]);
     }
 
+    tessellator__cleanup(&RENDERER.model_tessellator);
     tessellator__cleanup(&RENDERER.tessellator);
     rsurface_manager__cleanup(&RENDERER.rsurfaces);
 }
@@ -314,6 +322,10 @@ blitter_t* renderer__get_blitter(void) {
 
 shared_texture_manager_t* renderer__get_shared_textures(void) {
     return &RENDERER.shared_textures;
+}
+
+model_manager_t* renderer__get_models(void) {
+    return &RENDERER.models;
 }
 
 static void gl_debug_log(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, GLchar const* message, void const* user_param) {

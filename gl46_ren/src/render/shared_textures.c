@@ -39,6 +39,7 @@ texture_t* shared_texture_manager__get_texture(shared_texture_manager_t* self, S
     char* path_upper = SDL_strdup(lt_texture->m_pFile->m_Filename);
     if (path_upper == nullptr) {
         LOG_ERROR("Failed to alloc uppercase string");
+        goto err;
     }
     SDL_strupr(path_upper);
 
@@ -65,7 +66,6 @@ texture_t* shared_texture_manager__get_texture(shared_texture_manager_t* self, S
 
     SDL_free(path_upper);
 
-
     SDL_assert(texture != nullptr);
     return &texture->texture;
 
@@ -78,6 +78,7 @@ texture_t* shared_texture_manager__get_texture_by_filename(shared_texture_manage
     char* path_upper = SDL_strdup(filename);
     if (path_upper == nullptr) {
         LOG_ERROR("Failed to alloc uppercase string");
+        goto err;
     }
     SDL_strupr(path_upper);
 
@@ -91,7 +92,6 @@ texture_t* shared_texture_manager__get_texture_by_filename(shared_texture_manage
     }
 
     SDL_free(path_upper);
-
     return &texture->texture;
 
 err:
@@ -101,11 +101,9 @@ err:
 
 static int compare_textures_by_hash(void const* a, void const* b) {
     uint64_t const* const* hash_a = a;
-    shared_texture_t const* const* texture_b = b;
+    uint64_t const* const* hash_b = b;
 
-    uint64_t hash_b = (*texture_b)->path_hash;
-
-    return (**hash_a > hash_b) - (**hash_a < hash_b);
+    return (**hash_a > **hash_b) - (**hash_a < **hash_b);
 }
 
 static shared_texture_t* create_texture(shared_texture_manager_t* self, TextureData_t const* texture_data, uint64_t path_hash) {
