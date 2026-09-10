@@ -48,6 +48,7 @@ target_link_libraries(gl46_ren PRIVATE
     lt_common
     gl46_glad
     hmm
+    stb
 )
 
 if (MINGW)

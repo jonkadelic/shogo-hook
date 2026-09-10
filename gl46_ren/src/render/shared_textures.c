@@ -3,6 +3,7 @@
 #include <stddef.h>
 
 #include <SDL3/SDL.h>
+#include <stb_image.h>
 
 #include "logger.h"
 #include "render/render_api.h"
@@ -13,7 +14,7 @@
 
 static int compare_textures_by_hash(void const* a, void const* b);
 
-static shared_texture_t* create_texture(shared_texture_manager_t* self, TextureData_t const* texture_data, uint64_t path_hash);
+static shared_texture_t* create_texture(shared_texture_manager_t* self, TextureData_t const* texture_data, char* path, uint64_t path_hash);
 
 bool shared_texture_manager__init(shared_texture_manager_t* self) {
     OBJECT_ZERO_INIT(self);
@@ -54,7 +55,7 @@ texture_t* shared_texture_manager__get_texture(shared_texture_manager_t* self, S
             goto err;
         }
 
-        texture = create_texture(self, texture_data, path_hash);
+        texture = create_texture(self, texture_data, path_upper, path_hash);
         RENDER_STRUCT->FreeTexture(lt_texture);
         if (texture == nullptr) {
             LOG_ERROR("Failed to create new shared texture");
@@ -106,7 +107,7 @@ static int compare_textures_by_hash(void const* a, void const* b) {
     return (**hash_a > **hash_b) - (**hash_a < **hash_b);
 }
 
-static shared_texture_t* create_texture(shared_texture_manager_t* self, TextureData_t const* texture_data, uint64_t path_hash) {
+static shared_texture_t* create_texture(shared_texture_manager_t* self, TextureData_t const* texture_data, char* path, uint64_t path_hash) {
     shared_texture_t* out = nullptr;
     uint32_t* tbuf = nullptr;
 
@@ -138,35 +139,57 @@ static shared_texture_t* create_texture(shared_texture_manager_t* self, TextureD
         goto err;
     }
 
-    tbuf = SDL_malloc(texture_data->m_Width * texture_data->m_Height * sizeof(uint32_t));
-    if (tbuf == nullptr) {
-        LOG_ERROR("Failed to alloc memory for shared texture data");
-        goto err;
+    size_t path_len = strlen(path);
+    for (size_t i = 0; i < path_len; i++) {
+        if (path[i] == '\\') path[i] = '/';
     }
 
-    for (size_t i = 0; i < texture_data->m_Width * texture_data->m_Height; i++) {
-        uint32_t rgba = texture_data->m_pPalette->m_Colors[texture_data->m_pDataBuffer[i]];
-        uint32_t argb = ((rgba & 0xFFFFFF00) >> 8) | ((rgba & 0x000000FF) << 24);
-        tbuf[i] = argb;
-    }
+    bool loaded_replacement = false;
+    FILE* file = fopen(path, "rb");
+    if (file != nullptr) {
+        fclose(file); file = nullptr;
 
-    if (texture_data->m_Header.m_IFlags & 0x02) { // DTX_ALPHA_MASKS
-        for (size_t i = 0; i < texture_data->m_Width * texture_data->m_Height; i++) {
-            uint8_t alpha_pair = texture_data->m_pAlphaBuffer[i >> 1];
-            uint8_t alpha_val = 0;
-            if (i % 2 == 0) {
-                alpha_val = alpha_pair & 0x0F;
-            } else {
-                alpha_val = (alpha_pair & 0xF0) >> 4;
-            }
-
-            tbuf[i] &= 0x00FFFFFF;
-            tbuf[i] |= ((alpha_val << 4) | alpha_val) << 24;
+        int x, y, n;
+        uint8_t* data = stbi_load(path, &x, &y, &n, 4);
+        if (data != nullptr) {
+            texture__upload(&out->texture, x, y, COLOR_FORMAT__RGBA32, data);
+            free(data);
+            loaded_replacement = true;
         }
     }
 
-    texture__upload(&out->texture, texture_data->m_Width, texture_data->m_Height, COLOR_FORMAT__RGBA32, tbuf);
-    SDL_free(tbuf); tbuf = nullptr;
+    // Load original texture
+    if (!loaded_replacement) {
+        tbuf = SDL_malloc(texture_data->m_Width * texture_data->m_Height * sizeof(uint32_t));
+        if (tbuf == nullptr) {
+            LOG_ERROR("Failed to alloc memory for shared texture data");
+            goto err;
+        }
+    
+        for (size_t i = 0; i < texture_data->m_Width * texture_data->m_Height; i++) {
+            uint32_t rgba = texture_data->m_pPalette->m_Colors[texture_data->m_pDataBuffer[i]];
+            uint32_t argb = ((rgba & 0xFFFFFF00) >> 8) | ((rgba & 0x000000FF) << 24);
+            tbuf[i] = argb;
+        }
+    
+        if (texture_data->m_Header.m_IFlags & 0x02) { // DTX_ALPHA_MASKS
+            for (size_t i = 0; i < texture_data->m_Width * texture_data->m_Height; i++) {
+                uint8_t alpha_pair = texture_data->m_pAlphaBuffer[i >> 1];
+                uint8_t alpha_val = 0;
+                if (i % 2 == 0) {
+                    alpha_val = alpha_pair & 0x0F;
+                } else {
+                    alpha_val = (alpha_pair & 0xF0) >> 4;
+                }
+    
+                tbuf[i] &= 0x00FFFFFF;
+                tbuf[i] |= ((alpha_val << 4) | alpha_val) << 24;
+            }
+        }
+    
+        texture__upload(&out->texture, texture_data->m_Width, texture_data->m_Height, COLOR_FORMAT__RGBA32, tbuf);
+        SDL_free(tbuf); tbuf = nullptr;
+    }
 
     self->textures_len++;
 
