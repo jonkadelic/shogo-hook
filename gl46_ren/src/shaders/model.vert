@@ -2,6 +2,7 @@
 
 struct VertexData {
     float position[3];
+    float normal[3];
     float color[4];
     float uv[2];
     uint node_id;
@@ -22,6 +23,14 @@ vec3 get_position(int index) {
         vertices[index].position[0],
         vertices[index].position[1],
         vertices[index].position[2]
+    );
+}
+
+vec3 get_normal(int index) {
+    return vec3(
+        vertices[index].normal[0],
+        vertices[index].normal[1],
+        vertices[index].normal[2]
     );
 }
 
@@ -50,6 +59,7 @@ int get_index(int index) {
 }
 
 out vec4 fs_color;
+out vec3 fs_normal;
 out vec2 fs_uv;
 
 uniform mat4 u_projection;
@@ -60,5 +70,6 @@ void main() {
 
     gl_Position = u_projection * u_model * get_matrix(index) * vec4(get_position(index), 1.0);
     fs_color = get_color(index);
+    fs_normal = mat3(u_model * get_matrix(index)) * get_normal(index);
     fs_uv = get_uv(index);
 }

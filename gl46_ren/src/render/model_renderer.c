@@ -47,6 +47,10 @@ bool model_renderer__init(model_renderer_t* self, ModelData_t const* model_data)
             vertices[j].position[1] = vertex->m_Position.y;
             vertices[j].position[2] = -vertex->m_Position.z; // without this, model vertices are flipped
 
+            vertices[j].normal[0] = vertex->m_Normal[0] / 127.0f;
+            vertices[j].normal[1] = vertex->m_Normal[1] / 127.0f;
+            vertices[j].normal[2] = -vertex->m_Normal[2] / 127.0f; // ditto
+
             vertices[j].color[0] = 1.0f;
             vertices[j].color[1] = 1.0f;
             vertices[j].color[2] = 1.0f;
@@ -92,16 +96,16 @@ void model_renderer__cleanup(model_renderer_t* self) {
 void model_renderer__draw(model_renderer_t* self, ModelInstance_t const* model_instance) {
     auto object = &model_instance->base;
 
-    update_node_matrices(self->gl_node_matrix_ssbo, model_instance);
-
     if (model_instance->m_pSkin == nullptr) {
         return;
     }
-
+    
     texture_t* texture = shared_texture_manager__get_texture(
         renderer__get_shared_textures(),
         model_instance->m_pSkin
     );
+
+    update_node_matrices(self->gl_node_matrix_ssbo, model_instance);
 
     HMM_Mat4 projection_matrix = renderer__get_view_projection_matrix();
     HMM_Mat4 model_matrix = HMM_Translate(HMM_V3(object->m_Pos.x, object->m_Pos.y, object->m_Pos.z));
