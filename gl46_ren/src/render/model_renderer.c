@@ -4,7 +4,16 @@
 #include "renderer.h"
 #include "util/util.h"
 
-static bool update_node_matrices(GLuint ssbo, ModelData_t const* model_data);
+static bool update_node_matrices(GLuint ssbo, ModelInstance_t const* model_instance);
+static bool node_matrix_recurse(
+    ModelAnimNode_t const* node_from,
+    size_t key_from,
+    ModelAnimNode_t const* node_to,
+    size_t key_to,
+    float lerp,
+    HMM_Mat4 const* parent_matrix,
+    HMM_Mat4* matrices
+);
 
 bool model_renderer__init(model_renderer_t* self, ModelData_t const* model_data) {
     OBJECT_ZERO_INIT(self);
@@ -63,8 +72,6 @@ bool model_renderer__init(model_renderer_t* self, ModelData_t const* model_data)
         goto err;
     }
 
-    update_node_matrices(self->gl_node_matrix_ssbo, model_data);
-
     return true;
 
 err:
@@ -85,7 +92,7 @@ void model_renderer__cleanup(model_renderer_t* self) {
 void model_renderer__draw(model_renderer_t* self, ModelInstance_t const* model_instance) {
     auto object = &model_instance->base;
 
-    // update_node_matrices(self->gl_node_matrix_ssbo, model_instance->m_pModelData);
+    update_node_matrices(self->gl_node_matrix_ssbo, model_instance);
 
     if (model_instance->m_pSkin == nullptr) {
         return;
@@ -129,27 +136,53 @@ void model_renderer__draw(model_renderer_t* self, ModelInstance_t const* model_i
     glDisable(GL_DEPTH_TEST);
 }
 
-static bool update_node_matrices(GLuint ssbo, ModelData_t const* model_data) {
+static bool update_node_matrices(GLuint ssbo, ModelInstance_t const* model_instance) {
+    auto model_data = model_instance->m_Tracker.m_pModelData;
+    auto anim_from = model_instance->m_Tracker.m_Frames[0].m_pAnimation;
+    auto anim_to = model_instance->m_Tracker.m_Frames[1].m_pAnimation;
+    auto lerp = model_instance->m_Tracker.m_fLerp;
+    
     SDL_assert(model_data->m_nNodeMatrices == model_data->m_nNodes);
 
     static_assert(sizeof(HMM_Mat4) == sizeof(float[16]));
-    HMM_Mat4* matrix_data = SDL_calloc(1, sizeof(HMM_Mat4) * model_data->m_nNodeMatrices);
+    HMM_Mat4* matrix_data = SDL_malloc(sizeof(HMM_Mat4) * model_data->m_nNodeMatrices);
     if (matrix_data == nullptr) {
         LOG_ERROR("Failed to alloc %zu matrices", model_data->m_nNodeMatrices);
         return false;
     }
-
-    HMM_Mat4 handedness = HMM_Scale(HMM_V3(1.0f, 1.0f, -1.0f));
-
     for (size_t i = 0; i < model_data->m_nNodeMatrices; i++) {
-        auto in_matrix = &model_data->m_pNodeMatrices[i];
-        auto out_matrix = &matrix_data[i];
+        matrix_data[i] = HMM_M4D(1.0f);
+    }
+    
+    HMM_Mat4 identity = HMM_M4D(1.0f);
 
-        static_assert(sizeof(*in_matrix) == sizeof(*out_matrix));
-        *out_matrix = HMM_TransposeM4(*(HMM_Mat4*) in_matrix);
-        *out_matrix = HMM_MulM4(
-            HMM_MulM4(handedness, *out_matrix),
-            handedness
+    // Interpolate base animation root position
+    if (anim_from->m_pNodeTransforms != nullptr && anim_to->m_pNodeTransforms != nullptr) {
+        uint32_t key_from = model_instance->m_Tracker.m_Frames[0].m_FrameIndex;
+        uint32_t key_to = model_instance->m_Tracker.m_Frames[1].m_FrameIndex;
+        
+        HMM_Vec3 pos_from = *(HMM_Vec3*) &anim_from->m_pNodeTransforms[key_from].m_Position;
+        HMM_Vec3 pos_to = *(HMM_Vec3*) &anim_to->m_pNodeTransforms[key_to].m_Position;
+        
+        // Interpolate and negate Z for handedness
+        HMM_Vec3 pos_interp = HMM_LerpV3(pos_from, lerp, pos_to);
+        pos_interp.Z = -pos_interp.Z;
+        
+        identity = HMM_Translate(pos_interp);
+    }
+
+    for (size_t i = 0; i < anim_from->unk_40->m_nChildNodes; i++) {
+        auto anim_node_from = &anim_from->m_pRootNodes[i];
+        auto anim_node_to = &anim_to->m_pRootNodes[i];
+
+        node_matrix_recurse(
+            anim_node_from,
+            model_instance->m_Tracker.m_Frames[0].m_FrameIndex,
+            anim_node_to,
+            model_instance->m_Tracker.m_Frames[1].m_FrameIndex,
+            lerp,
+            &identity,
+            matrix_data
         );
     }
 
@@ -162,6 +195,71 @@ static bool update_node_matrices(GLuint ssbo, ModelData_t const* model_data) {
     );
 
     SDL_free(matrix_data);
+
+    return true;
+}
+
+static bool node_matrix_recurse(
+    ModelAnimNode_t const* node_from,
+    size_t key_from,
+    ModelAnimNode_t const* node_to,
+    size_t key_to,
+    float lerp,
+    HMM_Mat4 const* parent_matrix,
+    HMM_Mat4* matrices
+) {
+    auto model_node = node_from->m_pNode;
+
+    auto pos_lerp = HMM_LerpV3(
+        *(HMM_Vec3*) &node_from->m_pNodeTransforms[key_from].m_Position,
+        lerp,
+        *(HMM_Vec3*) &node_to->m_pNodeTransforms[key_to].m_Position
+    );
+    pos_lerp.Z = -pos_lerp.Z;
+
+    HMM_Quat quat_from = *(HMM_Quat*) &node_from->m_pNodeTransforms[key_from].m_Rotation;
+    HMM_Quat quat_to = *(HMM_Quat*) &node_to->m_pNodeTransforms[key_to].m_Rotation;
+    
+    // Shortest path: check dot product and negate if needed
+    float dot = quat_from.X * quat_to.X + quat_from.Y * quat_to.Y + 
+                quat_from.Z * quat_to.Z + quat_from.W * quat_to.W;
+    if (dot < 0.0f) {
+        quat_to.X = -quat_to.X;
+        quat_to.Y = -quat_to.Y;
+        quat_to.Z = -quat_to.Z;
+        quat_to.W = -quat_to.W;
+    }
+    
+    // SLERP (Spherical Linear Interpolation)
+    HMM_Quat rot_lerp = HMM_SLerp(quat_from, lerp, quat_to);
+    rot_lerp.Z = -rot_lerp.Z;
+
+    matrices[model_node->m_Index] = HMM_Mul(
+        HMM_Translate(pos_lerp),
+        HMM_QToM4(rot_lerp)
+    );
+    matrices[model_node->m_Index] = HMM_Mul(
+        *parent_matrix,
+        matrices[model_node->m_Index]
+    );
+
+    if (node_from->m_pChildren == nullptr) {
+        return true;
+    }
+
+    for (size_t i = 0; i < model_node->m_nChildNodes; i++) {
+        if (!node_matrix_recurse(
+            &node_from->m_pChildren[i],
+            key_from,
+            &node_to->m_pChildren[i],
+            key_to,
+            lerp,
+            &matrices[model_node->m_Index],
+            matrices
+        )) {
+            return false;
+        }
+    }
 
     return true;
 }

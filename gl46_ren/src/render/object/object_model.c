@@ -10,10 +10,10 @@ void object_model__draw(object_data_t* self, SceneDesc_t const* scene_desc, DObj
     auto data = &self->as_model;
 
     // If model doesn't exist or data doesn't match, init it
-    if (data->renderer == nullptr || data->last_model != model->m_pModelData) {
+    if (data->renderer == nullptr || data->last_model != model->m_Tracker.m_pModelData) {
         data->renderer = model_manager__get_renderer(
             renderer__get_models(),
-            model->m_pModelData
+            model->m_Tracker.m_pModelData
         );
 
         if (data->renderer == nullptr) {
